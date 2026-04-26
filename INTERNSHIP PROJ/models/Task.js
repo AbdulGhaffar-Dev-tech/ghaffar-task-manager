@@ -13,6 +13,12 @@ const taskSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+    // MOVED: user must be its own top-level field
+    user: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: 'User', 
+      required: [true, 'Task must belong to a user'] 
+    },
     status: {
       type: String,
       enum: ['Pending', 'In Progress', 'Completed'],
@@ -21,7 +27,6 @@ const taskSchema = new mongoose.Schema(
     dueDate: {
       type: Date,
     },
-    // FIX: difficulty should be its own top-level field
     difficulty: { 
       type: String, 
       enum: ['Easy', 'Medium', 'Hard'], 

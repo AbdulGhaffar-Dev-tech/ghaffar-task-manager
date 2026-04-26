@@ -1,0 +1,64 @@
+.auth-container {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f0f2f5;
+}
+.auth-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  width: 350px;
+  text-align: center;
+}
+.auth-card input {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+.auth-btn {
+  width: 100%;
+  padding: 10px;
+  background: #6366f1;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.auth-card {
+  /* Use the background variable from App.css */
+  background: var(--card-bg); 
+  padding: 2rem;
+  border-radius: 12px;
+  /* Use the shadow variable from App.css */
+  box-shadow: var(--shadow); 
+  width: 350px;
+  text-align: center;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* Fix for the Welcome text (h2) and description (p) */
+.auth-card h2 {
+  color: var(--text-main); /* This will turn white/light in dark mode */
+  margin-bottom: 0.5rem;
+}
+
+.auth-card p {
+  color: var(--text-muted); /* This will turn a soft gray in dark mode */
+  margin-bottom: 1.5rem;
+}
+
+/* Ensure labels inside the auth card are visible */
+.auth-card label {
+  color: var(--text-main);
+  display: block;
+  text-align: left;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 5px;
+}

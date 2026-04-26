@@ -7,7 +7,7 @@ export default function TaskForm({ task, onClose, onSaved }) {
     description: '',
     status: 'Pending',
     dueDate: '',
-    difficulty: 'Medium', // Default value
+    difficulty: 'Medium',
   });
 
   useEffect(() => {
@@ -26,7 +26,21 @@ export default function TaskForm({ task, onClose, onSaved }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const taskData = { ...form };
+    
+    // 1. Get user data from localStorage
+    const userData = JSON.parse(localStorage.getItem('user'));
+    
+    if (!userData || !userData.id) {
+      alert("Session expired. Please login again.");
+      return;
+    }
+
+    // 2. Attach the user ID to the task data
+    const taskData = { 
+        ...form, 
+        user: userData.id  // CRITICAL: Links the task to you
+    };
+
     if (!taskData.dueDate) delete taskData.dueDate;
 
     try {
@@ -35,13 +49,13 @@ export default function TaskForm({ task, onClose, onSaved }) {
       } else {
         await createTask(taskData);
       }
-      onSaved();
+      // 3. Trigger refresh in TaskList
+      onSaved(); 
     } catch (error) {
       console.error("Save failed", error);
-      alert("Error saving task. Check if title is missing.");
+      alert("Error saving task. Ensure your backend Task model includes the 'user' field.");
     }
   };
-  
 
   return (
     <form onSubmit={handleSubmit} className="relative">
@@ -53,7 +67,6 @@ export default function TaskForm({ task, onClose, onSaved }) {
       </p>
       
       <div className="task-form-grid">
-        {/* Title - Full Width */}
         <div className="form-group full-width">
           <label className="text-xs font-bold uppercase tracking-wider mb-1 block opacity-70">Task Title</label>
           <input 
@@ -66,7 +79,6 @@ export default function TaskForm({ task, onClose, onSaved }) {
           />
         </div>
 
-        {/* Description - Full Width */}
         <div className="form-group full-width">
           <label className="text-xs font-bold uppercase tracking-wider mb-1 block opacity-70">Description</label>
           <textarea 
@@ -79,7 +91,6 @@ export default function TaskForm({ task, onClose, onSaved }) {
           />
         </div>
 
-        {/* Status - Half Width */}
         <div className="form-group">
           <label className="text-xs font-bold uppercase tracking-wider mb-1 block opacity-70">Status</label>
           <select name='status' value={form.status} onChange={handleChange} className="w-full">
@@ -89,13 +100,11 @@ export default function TaskForm({ task, onClose, onSaved }) {
           </select>
         </div>
 
-        {/* Due Date - Half Width */}
         <div className="form-group">
           <label className="text-xs font-bold uppercase tracking-wider mb-1 block opacity-70">Due Date</label>
           <input type='date' name='dueDate' value={form.dueDate} onChange={handleChange} className="w-full" />
         </div>
 
-        {/* Difficulty - Full Width with Selection Logic */}
         <div className="form-group full-width">
           <label className="text-xs font-bold uppercase tracking-wider mb-2 block opacity-70">Priority Level</label>
           <div className="flex gap-3">

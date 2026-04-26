@@ -305,3 +305,12 @@ button:active {
 [data-theme='dark'] input::placeholder {
   color: #9ca3af;
 }
+[data-theme='dark'] .auth-card input {
+  background-color: #1e293b;
+  color: white;
+  border: 1px solid #334155;
+}
+
+[data-theme='dark'] .auth-card input::placeholder {
+  color: #94a3b8;
+}

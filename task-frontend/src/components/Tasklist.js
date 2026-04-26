@@ -13,15 +13,44 @@ export default function TaskList() {
 
   const fetchTasks = async () => {
     try {
-      const { data } = await getAllTasks();
+      // 1. Get the user data from localStorage (stored during login)
+      const userData = JSON.parse(localStorage.getItem('user'));
+      
+      if (!userData || !userData.id) {
+        toast.error("User session expired. Please login again.");
+        return;
+      }
+
+      // 2. Pass the userId to your API helper
+      const { data } = await getAllTasks(userData.id); 
+      
       setTasks(data);
       setFilteredTasks(data);
     } catch (err) {
       toast.error("Failed to load tasks");
     }
   };
+  // Add this inside TaskList function, before the return statement
+  const getStatusStyle = (status) => {
+    switch (status) {
+      case 'Completed': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
+      case 'In Progress': return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
+      default: return 'bg-slate-500/10 text-slate-500 border-slate-500/20';
+    }
+  };
 
-  useEffect(() => { fetchTasks(); }, []);
+  const getDifficultyColor = (level) => {
+    switch (level) {
+      case 'Hard': return 'text-red-500';
+      case 'Medium': return 'text-amber-500';
+      case 'Easy': return 'text-emerald-500';
+      default: return 'text-gray-400';
+    }
+  };
+
+  useEffect(() => { 
+    fetchTasks(); 
+  }, []);
 
   const handleSearch = (term) => {
     const filtered = tasks.filter(task => 
@@ -45,22 +74,7 @@ export default function TaskList() {
     }
   };
 
-  const getStatusStyle = (status) => {
-    switch (status) {
-      case 'Completed': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
-      case 'In Progress': return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
-      default: return 'bg-slate-500/10 text-slate-500 border-slate-500/20';
-    }
-  };
-
-  const getDifficultyColor = (level) => {
-    switch (level) {
-      case 'Hard': return 'text-red-500';
-      case 'Medium': return 'text-amber-500';
-      case 'Easy': return 'text-emerald-500';
-      default: return 'text-gray-400';
-    }
-  };
+  // ... (Keep getStatusStyle and getDifficultyColor the same)
 
   return (
     <div className='p-6 max-w-4xl mx-auto'>
@@ -77,15 +91,10 @@ export default function TaskList() {
 
       <div className='space-y-4 mt-6'>
         {filteredTasks.map((task, index) => (
-          <div 
-            key={task._id} 
-            className='task-card'
-            style={{ animationDelay: `${index * 0.05}s` }}
-          >
+          <div key={task._id} className='task-card' style={{ animationDelay: `${index * 0.05}s` }}>
             <div className="flex-1">
               <div className='flex items-center gap-2 mb-1'>
                 <h3 className='font-bold text-lg' style={{ color: 'var(--text-main)' }}>{task.title}</h3>
-                {/* Difficulty Dot Indicator */}
                 <span className={`text-[10px] font-black ${getDifficultyColor(task.difficulty)}`}>
                   {task.difficulty === 'Hard' ? '●●●' : task.difficulty === 'Medium' ? '●●' : '●'}
                 </span>
@@ -96,7 +105,6 @@ export default function TaskList() {
                 <span className={`text-xs font-bold px-3 py-1 rounded-full border ${getStatusStyle(task.status)}`}>
                   {task.status}
                 </span>
-
                 {task.dueDate && (
                   <span className="text-xs font-medium text-indigo-500 flex items-center gap-1">
                     📅 {new Date(task.dueDate).toLocaleDateString()}
@@ -106,12 +114,8 @@ export default function TaskList() {
             </div>
 
             <div className='flex gap-3 ml-4 items-center'>
-              <button onClick={() => { setEditing(task); setShowModal(true); }} className='btn-edit text-sm'>
-                Edit
-              </button>
-              <button onClick={() => handleDelete(task._id)} className='btn-delete text-sm'>
-                Delete
-              </button>
+              <button onClick={() => { setEditing(task); setShowModal(true); }} className='btn-edit text-sm'>Edit</button>
+              <button onClick={() => handleDelete(task._id)} className='btn-delete text-sm'>Delete</button>
             </div>
           </div>
         ))}

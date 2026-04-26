@@ -1,23 +1,26 @@
-require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const taskRoutes = require('./routes/taskRoutes');
+require('dotenv').config();
 
 const app = express();
-
-// Middleware
-app.use(cors());
 app.use(express.json());
+app.use(cors()); // Crucial for Frontend-Backend communication
 
-// API Routes
-app.use('/api/tasks', taskRoutes);
+// Connect to MongoDB Atlas
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("Connected to MongoDB "))
+  .catch(err => console.log(err));
 
-// MongoDB Compass Connection
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/taskdb')
-  .then(() => {
-    console.log('Connected to MongoDB Compass ✅');
-    app.listen(process.env.PORT || 5000, () => console.log('Server running on port 5000 🚀'));
-  })
-  .catch(err => console.error('DB Connection Error ❌', err));
-  module.exports = app;
+// Use Routes
+// ... existing code ...
+
+// Use Routes
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/tasks', require('./routes/taskRoutes')); // ADD THIS LINE
+
+// ... rest of the code ...
+
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
