@@ -1,4 +1,4 @@
-// src/components/ProgressBar.jsx
+
 export default function ProgressBar({ tasks }) {
 const total = tasks.length;
 const completed = tasks.filter(t => t.status === 'Completed').length;
