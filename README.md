@@ -1,30 +1,33 @@
 # 📝 Task Management System
-**Developed during my internship at Developer Hub**  
+**Developed during my internship at Developer Hub corporation**  
 **Developed by:** AbdulGhaffar-Dev-tech
 
 ## 📖 Project Description
-A full-stack MERN application that allows users to manage tasks in real-time. This project has been upgraded from a basic CRUD app to a secure, multi-user platform where each user manages their own private database of tasks.
+A full-stack MERN application that allows users to manage tasks in real-time. This project has evolved from a basic CRUD app into a secure, multi-user collaboration platform featuring real-time notifications and role-based access control.
+
 
 ## ✨ New Features & Enhancements
-
 * User Authentication: Secure Signup and Login system using JWT (JSON Web Tokens).
-
-* Task Ownership: Tasks are now linked to specific User IDs; users only see their own tasks.
-
-* Password Recovery: Integrated Email service for "Forgot Password" and "Reset Password" functionality.
-
-* Advanced Task Metadata: Added support for Priority Levels (Easy, Medium, Hard) and Due Dates.
-
-* Progress Tracking: Dynamic progress bar that calculates completion percentage based on user tasks.
-
+* Role-Based Access (RBAC): Distinction between Admin and User roles.
+* Task Collaboration: Admins can share specific tasks with other users via email.
+* Real-Time Notifications: Integrated Socket.io for instant alerts when tasks are shared or status updates occur.
+* Task Ownership: Secure logic ensuring users only manage tasks they own or are authorized to collaborate on.
+* Password Recovery: Integrated Nodemailer for "Forgot Password" and "Reset Password" functionality.
+* Progress Tracking: Dynamic progress bar calculating completion percentage in real-time.
 * Theme Management: Persistent Dark/Light mode toggle.
 
 ## 🚀 Tech Stack
-*   **Frontend:** React.js
-*   **Backend:** Node.js & Express.js
-*   **Database:** MongoDB compass
-*   **Authentication: JWT & Bcrypt.js
-*   **Mail Service: Nodemailer
+*    **Frontend: React.js, Socket.io-client, Tailwind CSS
+
+*    **Backend: Node.js & Express.js
+
+*    **Real-Time: Socket.io
+
+*    **Database: MongoDB (via Mongoose)
+
+*    **Authentication: JWT & Bcrypt.js
+
+*    **Mail Service: Nodemailer
 
 ## ⚙️ Setup Instructions
 To run this project locally, follow these steps:
@@ -46,12 +49,24 @@ To run this project locally, follow these steps:
    npm run dev
 
 ## 🔌 API Endpoints
-*  POST /api/auth/login — Authenticate user & return token.
-*  POST /api/auth/signup — Register a new user.
-*  GET /api/tasks/my-tasks/:userId — Retrieves tasks belonging to a specific user.
-*  POST /api/tasks — Adds a new task linked to a User ID.
-*  PUT /api/tasks/:id — Updates an existing task.
-*  DELETE /api/tasks/:id — Removes a specific task.
+* Authentication
+* POST /api/auth/login — Authenticate user & return token.
+
+* POST /api/auth/signup — Register a new user.
+
+* Tasks & Collaboration
+* GET /api/tasks — Retrieves tasks (Owned & Shared) for the authenticated user.
+
+* POST /api/tasks — Adds a new task linked to the creator.
+
+* PUT /api/tasks/:id — Updates an existing task (Authorized for Owner/Collaborator).
+
+* PUT /api/tasks/:id/share — (Admin Only) Shares a task with another user.
+
+* DELETE /api/tasks/:id — (Owner Only) Removes a specific task.
+## 📸 Project Showcase
+🔔 Real-Time Collaboration
+* When an Admin shares a task, the user receives an instant notification without refreshing the page.
 
 ## 📸 Screenshots
 
