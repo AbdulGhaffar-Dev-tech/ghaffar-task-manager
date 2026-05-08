@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createTask, updateTask } from '../services/api';
+import { toast } from 'react-toastify';
 
 export default function TaskForm({ task, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -10,6 +11,7 @@ export default function TaskForm({ task, onClose, onSaved }) {
     difficulty: 'Medium',
   });
 
+  // Load task data into form when editing
   useEffect(() => {
     if (task) {
       setForm({
@@ -26,34 +28,28 @@ export default function TaskForm({ task, onClose, onSaved }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // 1. Get user data from localStorage
-    const userData = JSON.parse(localStorage.getItem('user'));
-    
-    if (!userData || !userData.id) {
-      alert("Session expired. Please login again.");
-      return;
-    }
 
-    // 2. Attach the user ID to the task data
-    const taskData = { 
-        ...form, 
-        user: userData.id  // CRITICAL: Links the task to you
-    };
-
+    // 1. Prepare data (Backend handles 'owner' via JWT token)
+    const taskData = { ...form };
+    
+    // Remove empty due date to avoid backend validation errors
     if (!taskData.dueDate) delete taskData.dueDate;
 
     try {
       if (task && task._id) {
+        // Update existing task
         await updateTask(task._id, taskData);
       } else {
+        // Create new task
         await createTask(taskData);
       }
-      // 3. Trigger refresh in TaskList
+      
+      // Trigger refresh in TaskList and close modal
       onSaved(); 
     } catch (error) {
       console.error("Save failed", error);
-      alert("Error saving task. Ensure your backend Task model includes the 'user' field.");
+      const errorMsg = error.response?.data?.message || "Error saving task. Check backend connection.";
+      toast.error(errorMsg);
     }
   };
 

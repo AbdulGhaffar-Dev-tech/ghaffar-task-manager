@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
+import { toast } from 'react-toastify'; // Optional: Use toast for better UI
 import './Auth.css';
 
 const Login = ({ setIsLoggedIn }) => {
@@ -14,19 +15,23 @@ const Login = ({ setIsLoggedIn }) => {
     const handleLogin = async (e) => {
         e.preventDefault();
         try {
-            // Inside your Login component handleLogin function
-const response = await axios.post('http://localhost:5000/api/auth/login', credentials);
+            const response = await axios.post('http://localhost:5000/api/auth/login', credentials);
 
-if (response.data.user) {
-    // CRITICAL: You must save the user object so TaskForm can find the ID later
-    localStorage.setItem('user', JSON.stringify(response.data.user));
-    localStorage.setItem('token', response.data.token);
-    setIsLoggedIn(true);
-    navigate('/');
-}
+            if (response.data.token) {
+                // 1. Save the token for API authorization
+                localStorage.setItem('token', response.data.token);
+
+                // 2. Save the full user object (includes id, name, and role)
+                // This allows TaskList.js to check if (user.role === 'admin')
+                localStorage.setItem('user', JSON.stringify(response.data.user));
+
+                setIsLoggedIn(true);
+                toast.success(`Welcome back, ${response.data.user.name}!`);
+                navigate('/');
+            }
         } catch (err) {
-            const msg = err.response?.data?.message || "Check your internet/backend";
-            alert("Login Error: " + msg); 
+            const msg = err.response?.data?.message || "Check your internet or backend connection";
+            toast.error(msg); 
         }
     };
 
@@ -40,7 +45,7 @@ if (response.data.user) {
                         <input 
                             type="email" 
                             name="email" 
-                            placeholder="Email" 
+                            placeholder="your@email.com" 
                             onChange={handleChange} 
                             required 
                         />
@@ -56,7 +61,7 @@ if (response.data.user) {
                         <input 
                             type="password" 
                             name="password" 
-                            placeholder="Password" 
+                            placeholder="••••••••" 
                             onChange={handleChange} 
                             required 
                         />

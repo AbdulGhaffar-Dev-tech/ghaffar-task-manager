@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getAllTasks, deleteTask } from '../services/api';
+import { getAllTasks, deleteTask, shareTask } from '../services/api'; 
 import TaskForm from './TaskForm';
 import ProgressBar from './ProgressBar';
 import SearchBar from './SearchBar';
@@ -11,46 +11,42 @@ export default function TaskList() {
   const [editing, setEditing] = useState(null); 
   const [showModal, setShowModal] = useState(false);
 
+  const userData = JSON.parse(localStorage.getItem('user'));
+  const isAdmin = userData?.role === 'admin';
+  const currentUserId = userData?.id || userData?._id;
+
   const fetchTasks = async () => {
     try {
-      // 1. Get the user data from localStorage (stored during login)
-      const userData = JSON.parse(localStorage.getItem('user'));
-      
-      if (!userData || !userData.id) {
-        toast.error("User session expired. Please login again.");
-        return;
-      }
-
-      // 2. Pass the userId to your API helper
-      const { data } = await getAllTasks(userData.id); 
-      
+      const { data } = await getAllTasks(); 
       setTasks(data);
       setFilteredTasks(data);
     } catch (err) {
-      toast.error("Failed to load tasks");
-    }
-  };
-  // Add this inside TaskList function, before the return statement
-  const getStatusStyle = (status) => {
-    switch (status) {
-      case 'Completed': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
-      case 'In Progress': return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
-      default: return 'bg-slate-500/10 text-slate-500 border-slate-500/20';
+      console.error("Fetch Error:", err);
+      toast.error("Failed to load tasks.");
     }
   };
 
-  const getDifficultyColor = (level) => {
-    switch (level) {
-      case 'Hard': return 'text-red-500';
-      case 'Medium': return 'text-amber-500';
-      case 'Easy': return 'text-emerald-500';
-      default: return 'text-gray-400';
+  const handleShare = async (taskId) => {
+    const email = window.prompt("Enter the email of the user to share this task with:");
+    if (!email) return;
+
+    try {
+      await shareTask(taskId, email);
+      toast.success(`Task shared with ${email}! ✉️`);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to share task.");
     }
   };
 
-  useEffect(() => { 
-    fetchTasks(); 
-  }, []);
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this task?')) {
+      try {
+        await deleteTask(id);
+        toast.error("Task removed 🗑️");
+        fetchTasks();
+      } catch (err) { toast.error("Error deleting task"); }
+    }
+  };
 
   const handleSearch = (term) => {
     const filtered = tasks.filter(task => 
@@ -64,24 +60,25 @@ export default function TaskList() {
     status === '' ? setFilteredTasks(tasks) : setFilteredTasks(tasks.filter(t => t.status === status));
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this task?')) {
-      try {
-        await deleteTask(id);
-        toast.error("Task removed permanently 🗑️", { position: "bottom-right", theme: "colored" });
-        fetchTasks();
-      } catch (err) { toast.error("Error deleting task"); }
+  useEffect(() => { fetchTasks(); }, []);
+
+  const getStatusStyle = (status) => {
+    switch (status) {
+      case 'Completed': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
+      case 'In Progress': return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
+      default: return 'bg-slate-500/10 text-slate-500 border-slate-500/20';
     }
   };
-
-  // ... (Keep getStatusStyle and getDifficultyColor the same)
 
   return (
     <div className='p-6 max-w-4xl mx-auto'>
       <ProgressBar tasks={tasks} />
       
       <div className='flex justify-between items-center mb-6'>
-        <h1 className='text-3xl font-bold tracking-tight' style={{ color: 'var(--text-main)' }}>My Tasks</h1>
+        <div className="flex flex-col">
+          <h1 className='text-3xl font-bold tracking-tight' style={{ color: 'var(--text-main)' }}>My Tasks</h1>
+          {isAdmin && <span className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mt-1">Administrator Mode</span>}
+        </div>
         <button onClick={() => { setEditing(null); setShowModal(true); }} className='btn-primary'>
           + New Task
         </button>
@@ -90,35 +87,75 @@ export default function TaskList() {
       <SearchBar onSearch={handleSearch} onFilter={handleFilter} />
 
       <div className='space-y-4 mt-6'>
-        {filteredTasks.map((task, index) => (
-          <div key={task._id} className='task-card' style={{ animationDelay: `${index * 0.05}s` }}>
-            <div className="flex-1">
-              <div className='flex items-center gap-2 mb-1'>
-                <h3 className='font-bold text-lg' style={{ color: 'var(--text-main)' }}>{task.title}</h3>
-                <span className={`text-[10px] font-black ${getDifficultyColor(task.difficulty)}`}>
-                  {task.difficulty === 'Hard' ? '●●●' : task.difficulty === 'Medium' ? '●●' : '●'}
-                </span>
-              </div>
-              <p className='text-sm mb-3' style={{ color: 'var(--text-muted)' }}>{task.description}</p>
-              
-              <div className="flex gap-3 items-center">
-                <span className={`text-xs font-bold px-3 py-1 rounded-full border ${getStatusStyle(task.status)}`}>
-                  {task.status}
-                </span>
-                {task.dueDate && (
-                  <span className="text-xs font-medium text-indigo-500 flex items-center gap-1">
-                    📅 {new Date(task.dueDate).toLocaleDateString()}
+        {filteredTasks.map((task, index) => {
+          // --- AUTHORIZATION LOGIC ---
+          const isOwner = task.owner === currentUserId || task.owner?._id === currentUserId;
+          const isCollaborator = task.sharedWith?.includes(currentUserId);
+          const canEdit = isOwner || isCollaborator;
+
+          return (
+            <div key={task._id} className='task-card' style={{ animationDelay: `${index * 0.05}s` }}>
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-1">
+  {/* The Title/Name */}
+  <h3 className="font-bold text-lg tracking-tight" style={{ color: 'var(--text-main)' }}>
+    {task.title}
+  </h3>
+
+  {/* The Badge */}
+  {isCollaborator && (
+    <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-100 text-indigo-600 border border-indigo-200">
+      <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
+      Shared with me
+    </span>
+  )}
+</div>
+                <p className='text-sm mb-3' style={{ color: 'var(--text-muted)' }}>{task.description}</p>
+                
+                <div className="flex gap-3 items-center">
+                  <span className={`text-xs font-bold px-3 py-1 rounded-full border ${getStatusStyle(task.status)}`}>
+                    {task.status}
                   </span>
+                </div>
+              </div>
+
+              <div className='flex gap-2 ml-4 items-center'>
+                {/* 1. SHARE: Only Admin + Owner */}
+ {isAdmin && isOwner && (
+  <button 
+    onClick={() => handleShare(task._id)} 
+    className='btn-share text-sm'
+  >
+    {/* Optional: adding a small icon makes it look even better */}
+    <span className="mr-1">✉</span> Share
+  </button>
+)}
+                {/* 2. EDIT: Owner OR Collaborator */}
+                {canEdit ? (
+                  <button 
+                    onClick={() => { setEditing(task); setShowModal(true); }} 
+                    className='btn-edit text-sm'
+                  >
+                    Edit
+                  </button>
+                ) : (
+                  <span className="text-[10px] text-gray-400 italic">View Only</span>
+                )}
+
+                {/* 3. DELETE: Only Owner */}
+                {isOwner && (
+                  <button 
+                    onClick={() => handleDelete(task._id)} 
+                    className='btn-delete text-sm'
+                  >
+                    Delete
+                  </button>
                 )}
               </div>
             </div>
-
-            <div className='flex gap-3 ml-4 items-center'>
-              <button onClick={() => { setEditing(task); setShowModal(true); }} className='btn-edit text-sm'>Edit</button>
-              <button onClick={() => handleDelete(task._id)} className='btn-delete text-sm'>Delete</button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
+        
         {filteredTasks.length === 0 && (
           <div className="text-center py-20 opacity-50"><p className="text-xl">No tasks found</p></div>
         )}
@@ -133,7 +170,7 @@ export default function TaskList() {
               onSaved={() => { 
                 fetchTasks(); 
                 setShowModal(false); 
-                toast.success(editing ? "Changes saved! ✅" : "Task added! 🚀", { position: "bottom-right", theme: "colored" });
+                toast.success(editing ? "Changes saved! ✅" : "Task added! 🚀");
               }}
             />
           </div>

@@ -28,14 +28,13 @@ body {
   margin: 0;
 }
 
-/* Dashboard Layout */
 .App {
   max-width: 900px;
   margin: 0 auto;
   padding: 40px 20px;
 }
 
-/* Task Cards */
+
 .task-card {
   background: var(--card-bg);
   border: 1px solid var(--border);
@@ -54,7 +53,7 @@ body {
   border-color: var(--primary);
 }
 
-/* Glassmorphism Modal */
+
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -77,7 +76,7 @@ body {
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
 
-/* Buttons */
+
 .btn-primary {
   background: linear-gradient(135deg, var(--primary), #8b5cf6);
   color: white;
@@ -112,7 +111,7 @@ body {
   from { opacity: 0; }
   to { opacity: 1; }
 }
-/* --- Professional Red Delete Button --- */
+
 .btn-delete {
   background: transparent;
   color: #ef4444; /* Pro Red */
@@ -130,9 +129,6 @@ body {
   transform: scale(1.05);
 }
 
-/* --- UI Animations --- */
-
-/* 1. Task Card Entry Animation */
 @keyframes slideUp {
   from {
     opacity: 0;
@@ -146,10 +142,10 @@ body {
 
 .task-card {
   animation: slideUp 0.4s ease forwards;
-  /* Existing styles... */
+ 
 }
 
-/* 2. Modal Pop Animation */
+
 @keyframes modalPop {
   0% {
     opacity: 0;
@@ -163,16 +159,16 @@ body {
 
 .modal-content {
   animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  /* Existing styles... */
+
 }
 
-/* 3. Button Press Ripple Effect */
+
 button:active {
   transform: scale(0.95);
 }
-/* --- Professional Edit Button --- */
+
 .btn-edit {
-  background: rgba(59, 130, 246, 0.1); /* Soft Blue Tint */
+  background: rgba(59, 130, 246, 0.1); 
   color: #3b82f6;
   border: 1px solid rgba(59, 130, 246, 0.2);
   padding: 6px 16px;
@@ -189,7 +185,6 @@ button:active {
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
-/* --- Optional: Add a pulsing animation to the "New Task" button to grab attention --- */
 @keyframes pulse-subtle {
   0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
   70% { box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
@@ -198,9 +193,7 @@ button:active {
 
 .btn-primary {
   animation: pulse-subtle 2s infinite;
-  /* Existing styles... */
 }
-/* The semi-transparent backdrop */
 .modal-overlay {
   background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(8px);
@@ -229,15 +222,15 @@ button:active {
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Organizing the Form with Grid */
+
 .task-form-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr; /* Two equal columns */
+  grid-template-columns: 1fr 1fr; 
   gap: 20px;
   margin-top: 20px;
 }
 
-/* Make Title and Description span across both columns */
+
 .full-width {
   grid-column: span 2;
 }
@@ -260,7 +253,7 @@ button:active {
   from { opacity: 0; transform: scale(0.9) translateY(20px); }
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
-/* Styling for the selected state button */
+
 .difficulty-btn-active {
   background: var(--p-500) !important;
   color: white !important;
@@ -270,7 +263,7 @@ button:active {
   position: relative;
 }
 
-/* Optional: Add a little checkmark or dot indicator inside the active button */
+
 .difficulty-btn-active::after {
   content: '✓';
   position: absolute;
@@ -286,19 +279,19 @@ button:active {
   justify-content: center;
   border: 2px solid var(--bg-dark);
 }
-/* Ensure all form elements adapt to dark mode */
+
 [data-theme='dark'] input, 
 [data-theme='dark'] select, 
 [data-theme='dark'] textarea {
-  background-color: #374151 !important; /* Lighter gray for input background */
-  color: #f9fafb !important;           /* Off-white text color */
-  border: 1px solid #4b5563 !important; /* Subtle border */
+  background-color: #374151 !important; 
+  color: #f9fafb !important;          
+  border: 1px solid #4b5563 !important; 
 }
 
-/* Specific fix for the Search/Status dropdown */
+
 [data-theme='dark'] select option {
-  background-color: #1f2937; /* Dark background for the dropdown options */
-  color: #f9fafb;            /* White text for the options */
+  background-color: #1f2937; 
+  color: #f9fafb;            
 }
 
 /* Style for the placeholder text in dark mode */
@@ -313,4 +306,33 @@ button:active {
 
 [data-theme='dark'] .auth-card input::placeholder {
   color: #94a3b8;
+}
+
+/* Modern Indigo Share Button */
+.btn-share {
+  padding: 5px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Initial State: Elegant & Subtle */
+  background: rgba(99, 102, 241, 0.1); 
+  color: #6366f1; 
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.btn-share:hover {
+  /* Hover State: Vibrant & Energetic */
+  background: #6366f1;
+  color: white;
+  border-color: #6366f1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.btn-share:active {
+  transform: translateY(0);
 }

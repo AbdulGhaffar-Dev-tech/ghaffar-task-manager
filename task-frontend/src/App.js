@@ -5,14 +5,15 @@ import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword'; 
 import Login from './components/Login';
 import Signup from './components/Signup';
-import { ToastContainer } from 'react-toastify';
+import { ToastContainer, toast } from 'react-toastify'; // Added toast here
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
+import io from 'socket.io-client';
+
+const socket = io('http://localhost:5000');
 
 function App() {
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
-  
-  // Check if token exists to keep user logged in on refresh
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
 
   useEffect(() => {
@@ -20,12 +21,40 @@ function App() {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
+  // --- NEW: SOCKET.IO NOTIFICATION LOGIC ---
+  useEffect(() => {
+    if (isLoggedIn) {
+      // Get user data from localStorage
+      const userData = JSON.parse(localStorage.getItem('user'));
+      
+      if (userData && userData.id) {
+        // Join a private room based on User ID to receive personal notifications
+        socket.emit('join', userData.id);
+
+        // Listen for real-time notifications from the server
+        socket.on('notification', (data) => {
+          toast.info(data.message, {
+            icon: "🔔",
+            autoClose: 5000,
+          });
+        });
+      }
+    }
+
+    // Cleanup connection on unmount or logout
+    return () => {
+      socket.off('notification');
+    };
+  }, [isLoggedIn]);
+  // ------------------------------------------
+
   const toggleTheme = () => setTheme(theme === 'light' ? 'dark' : 'light');
 
   const handleLogout = () => {
     localStorage.removeItem('token');
-    localStorage.removeItem('user'); // Clean up user data too
+    localStorage.removeItem('user'); 
     setIsLoggedIn(false);
+    socket.emit('logout'); // Notify socket of logout
   };
 
   return (
@@ -47,13 +76,10 @@ function App() {
         </header>
 
         <Routes>
-          {/* Use setIsLoggedIn here to match the common naming convention */}
           <Route path="/login" element={<Login setIsLoggedIn={setIsLoggedIn} />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-
-          {/* Protected Route */}
           <Route path="/" element={isLoggedIn ? <TaskList /> : <Navigate to="/login" />} />
         </Routes>
 
