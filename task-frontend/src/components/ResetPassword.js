@@ -10,7 +10,7 @@ const ResetPassword = () => {
     const handleUpdate = async (e) => {
         e.preventDefault();
         try {
-            // This must match your backend URL
+        
             await axios.post('http://localhost:5000/api/auth/update-password', { email, newPassword });
             alert("Password updated successfully!");
             navigate('/login');

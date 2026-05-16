@@ -58,7 +58,7 @@ const ForgotPassword = () => {
                 </form>
 
                 <p className="auth-footer">
-                    {/* Link now works because of the import at the top */}
+                    {/* Link back to login page */}
                     <Link to="/login" style={{ color: '#6366f1', textDecoration: 'none', fontWeight: '600' }}>
                         Back to Login
                     </Link>

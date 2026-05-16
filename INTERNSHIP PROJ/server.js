@@ -1,6 +1,6 @@
-const express = require('express');
-const mongoose = require('mongoose');
+const express = require ('express');
 const cors = require('cors');
+const mongoose = require('mongoose');
 const http = require('http');
 const { Server } = require('socket.io');
 require('dotenv').config();
@@ -54,6 +54,9 @@ app.use('/api/auth', authData.router);
 
 // Standard import for task routes
 app.use('/api/tasks', require('./routes/taskRoutes'));
+
+// ADDED FOR WEEK 5: Link your new Analytics system
+app.use('/api/analytics', require('./routes/analytics'));
 
 // 7. Global Error Handler
 app.use((err, req, res, next) => {

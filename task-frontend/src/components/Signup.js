@@ -18,7 +18,7 @@ const handleSignup = async (e) => {
     alert("Signup successful!");
     navigate('/login');
   } catch (err) {
-    // This will tell you exactly what the backend is complaining about
+    
     console.log(err.response.data); 
     alert("Signup failed: " + (err.response?.data?.message || "Server is offline"));
   }

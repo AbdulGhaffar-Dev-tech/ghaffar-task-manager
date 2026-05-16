@@ -4,6 +4,7 @@ import TaskForm from './TaskForm';
 import ProgressBar from './ProgressBar';
 import SearchBar from './SearchBar';
 import { toast } from 'react-toastify';
+import io from 'socket.io-client';
 
 export default function TaskList() {
   const [tasks, setTasks] = useState([]); 
@@ -26,13 +27,36 @@ export default function TaskList() {
     }
   };
 
+  useEffect(() => {
+    fetchTasks();
+
+    let socketInstance = null;
+    if (currentUserId) {
+      socketInstance = io('http://localhost:5000');
+      socketInstance.emit('join', currentUserId);
+
+      socketInstance.on('notification', (data) => {
+        if (data.type === 'TASK_SHARED' || data.type === 'TASK_EDITED') {
+          fetchTasks(); 
+        }
+      });
+    }
+
+    return () => {
+      if (socketInstance) {
+        socketInstance.off('notification');
+        socketInstance.disconnect();
+      }
+    };
+  }, [currentUserId]);
+
   const handleShare = async (taskId) => {
     const email = window.prompt("Enter the email of the user to share this task with:");
     if (!email) return;
-
     try {
       await shareTask(taskId, email);
       toast.success(`Task shared with ${email}! ✉️`);
+      fetchTasks();
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to share task.");
     }
@@ -60,13 +84,19 @@ export default function TaskList() {
     status === '' ? setFilteredTasks(tasks) : setFilteredTasks(tasks.filter(t => t.status === status));
   };
 
-  useEffect(() => { fetchTasks(); }, []);
-
   const getStatusStyle = (status) => {
     switch (status) {
       case 'Completed': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
       case 'In Progress': return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
       default: return 'bg-slate-500/10 text-slate-500 border-slate-500/20';
+    }
+  };
+
+  const getDifficultyStyle = (difficulty) => {
+    switch (difficulty) {
+      case 'High': return 'bg-red-500/10 text-red-600 border-red-500/20';
+      case 'Medium': return 'bg-orange-500/10 text-orange-600 border-orange-500/20';
+      default: return 'bg-blue-500/10 text-blue-600 border-blue-500/20';
     }
   };
 
@@ -88,66 +118,67 @@ export default function TaskList() {
 
       <div className='space-y-4 mt-6'>
         {filteredTasks.map((task, index) => {
-          // --- AUTHORIZATION LOGIC ---
-          const isOwner = task.owner === currentUserId || task.owner?._id === currentUserId;
-          const isCollaborator = task.sharedWith?.includes(currentUserId);
+          const taskOwnerId = task.owner?.id || task.owner?._id || task.owner;
+          const isOwner = taskOwnerId?.toString() === currentUserId?.toString();
+          const isCollaborator = task.sharedWith?.some(id => (id._id || id).toString() === currentUserId?.toString());
           const canEdit = isOwner || isCollaborator;
 
           return (
             <div key={task._id} className='task-card' style={{ animationDelay: `${index * 0.05}s` }}>
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-1">
-  {/* The Title/Name */}
-  <h3 className="font-bold text-lg tracking-tight" style={{ color: 'var(--text-main)' }}>
-    {task.title}
-  </h3>
-
-  {/* The Badge */}
-  {isCollaborator && (
-    <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-100 text-indigo-600 border border-indigo-200">
-      <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
-      Shared with me
-    </span>
-  )}
-</div>
+                  <h3 className="font-bold text-lg tracking-tight" style={{ color: 'var(--text-main)' }}>
+                    {task.title}
+                  </h3>
+                  {isCollaborator && (
+                    <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-100 text-indigo-600 border border-indigo-200">
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
+                      Shared with me
+                    </span>
+                  )}
+                </div>
                 <p className='text-sm mb-3' style={{ color: 'var(--text-muted)' }}>{task.description}</p>
                 
-                <div className="flex gap-3 items-center">
+                {/* Visual Badges: Status, Difficulty, and Due Date */}
+                <div className="flex flex-wrap gap-2 items-center">
                   <span className={`text-xs font-bold px-3 py-1 rounded-full border ${getStatusStyle(task.status)}`}>
-                    {task.status}
+                    {task.status || 'Pending'}
                   </span>
+
+                  {task.difficulty && (
+                    <span className={`text-xs font-bold px-3 py-1 rounded-full border ${getDifficultyStyle(task.difficulty)}`}>
+                      ⚡ {task.difficulty}
+                    </span>
+                  )}
+
+                  {/* 🔥 NEW: Due Date Visual Badge Section */}
+                  {task.dueDate && (
+                    <span className="text-xs font-bold px-3 py-1 rounded-full border bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 flex items-center gap-1">
+                      📅 Due: {new Date(task.dueDate).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                    </span>
+                  )}
                 </div>
               </div>
 
               <div className='flex gap-2 ml-4 items-center'>
-                {/* 1. SHARE: Only Admin + Owner */}
- {isAdmin && isOwner && (
-  <button 
-    onClick={() => handleShare(task._id)} 
-    className='btn-share text-sm'
-  >
-    {/* Optional: adding a small icon makes it look even better */}
-    <span className="mr-1">✉</span> Share
-  </button>
-)}
-                {/* 2. EDIT: Owner OR Collaborator */}
+                {isAdmin && isOwner && (
+                  <button onClick={() => handleShare(task._id)} className='btn-share text-sm'>
+                    <span className="mr-1">✉</span> Share
+                  </button>
+                )}
                 {canEdit ? (
-                  <button 
-                    onClick={() => { setEditing(task); setShowModal(true); }} 
-                    className='btn-edit text-sm'
-                  >
+                  <button onClick={() => { setEditing(task); setShowModal(true); }} className='btn-edit text-sm'>
                     Edit
                   </button>
                 ) : (
                   <span className="text-[10px] text-gray-400 italic">View Only</span>
                 )}
-
-                {/* 3. DELETE: Only Owner */}
                 {isOwner && (
-                  <button 
-                    onClick={() => handleDelete(task._id)} 
-                    className='btn-delete text-sm'
-                  >
+                  <button onClick={() => handleDelete(task._id)} className='btn-delete text-sm'>
                     Delete
                   </button>
                 )}

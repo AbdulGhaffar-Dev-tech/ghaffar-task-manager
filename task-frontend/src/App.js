@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom'; // ADDED: Link import here
 import TaskList from './components/TaskList'; 
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword'; 
 import Login from './components/Login';
 import Signup from './components/Signup';
-import { ToastContainer, toast } from 'react-toastify'; // Added toast here
+import AnalyticsDashboard from './components/AnalyticsDashboard'; // ADDED: Import Analytics Page
+import { ToastContainer, toast } from 'react-toastify'; 
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 import io from 'socket.io-client';
@@ -21,17 +22,14 @@ function App() {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  // --- NEW: SOCKET.IO NOTIFICATION LOGIC ---
+  // --- SOCKET.IO NOTIFICATION LOGIC ---
   useEffect(() => {
     if (isLoggedIn) {
-      // Get user data from localStorage
       const userData = JSON.parse(localStorage.getItem('user'));
       
       if (userData && userData.id) {
-        // Join a private room based on User ID to receive personal notifications
         socket.emit('join', userData.id);
 
-        // Listen for real-time notifications from the server
         socket.on('notification', (data) => {
           toast.info(data.message, {
             icon: "🔔",
@@ -41,12 +39,10 @@ function App() {
       }
     }
 
-    // Cleanup connection on unmount or logout
     return () => {
       socket.off('notification');
     };
   }, [isLoggedIn]);
-  // ------------------------------------------
 
   const toggleTheme = () => setTheme(theme === 'light' ? 'dark' : 'light');
 
@@ -54,23 +50,34 @@ function App() {
     localStorage.removeItem('token');
     localStorage.removeItem('user'); 
     setIsLoggedIn(false);
-    socket.emit('logout'); // Notify socket of logout
+    socket.emit('logout'); 
   };
 
   return (
     <Router>
       <div className="App">
         <header className="App-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '20px' }}>
-          <h1>Task Management</h1>
+          <h1 style={{ cursor: 'pointer' }}>
+            <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>Task Management</Link>
+          </h1>
           <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
             <button className="theme-toggle" onClick={toggleTheme} style={{ position: 'static' }}>
               {theme === 'light' ? '🌙' : '☀️'}
             </button>
             
+            {/* ADDED: Dynamic Analytics & Home Nav Buttons */}
             {isLoggedIn && (
-              <button onClick={handleLogout} className="btn-delete" style={{ padding: '8px 16px', fontSize: '14px' }}>
-                Logout
-              </button>
+              <>
+                <Link to="/" style={{ padding: '8px 16px', fontSize: '14px', textDecoration: 'none', background: '#e0e7ff', color: '#4f46e5', borderRadius: '6px', fontWeight: 'bold' }}>
+                  📋 Tasks
+                </Link>
+                <Link to="/analytics" style={{ padding: '8px 16px', fontSize: '14px', textDecoration: 'none', background: '#6366f1', color: 'white', borderRadius: '6px', fontWeight: 'bold' }}>
+                  📊 Analytics
+                </Link>
+                <button onClick={handleLogout} className="btn-delete" style={{ padding: '8px 16px', fontSize: '14px' }}>
+                  Logout
+                </button>
+              </>
             )}
           </div>
         </header>
@@ -80,7 +87,13 @@ function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          
+          {/* SECURE ROUTES: Protected by your login state */}
           <Route path="/" element={isLoggedIn ? <TaskList /> : <Navigate to="/login" />} />
+          <Route path="/analytics" element={isLoggedIn ? <AnalyticsDashboard /> : <Navigate to="/login" />} />
+
+          {/* Catch-all Fallback */}
+          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
 
         <ToastContainer position="bottom-right" theme={theme} />

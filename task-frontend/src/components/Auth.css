@@ -31,29 +31,27 @@
   font-weight: bold;
 }
 .auth-card {
-  /* Use the background variable from App.css */
+ 
   background: var(--card-bg); 
   padding: 2rem;
   border-radius: 12px;
-  /* Use the shadow variable from App.css */
+  
   box-shadow: var(--shadow); 
   width: 350px;
   text-align: center;
   transition: background 0.3s ease, color 0.3s ease;
 }
 
-/* Fix for the Welcome text (h2) and description (p) */
 .auth-card h2 {
-  color: var(--text-main); /* This will turn white/light in dark mode */
+  color: var(--text-main); 
   margin-bottom: 0.5rem;
 }
 
 .auth-card p {
-  color: var(--text-muted); /* This will turn a soft gray in dark mode */
+  color: var(--text-muted);
   margin-bottom: 1.5rem;
 }
 
-/* Ensure labels inside the auth card are visible */
 .auth-card label {
   color: var(--text-main);
   display: block;

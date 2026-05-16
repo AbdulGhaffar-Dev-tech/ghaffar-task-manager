@@ -1,11 +1,11 @@
-// src/components/SearchBar.js
+
 export default function SearchBar({ onSearch, onFilter }) {
   return (
     <div className='flex gap-3 mb-4'>
       <input
         type="text"
         placeholder='Search tasks...'
-        // Passes the text value to handleSearch in TaskList
+       
         onChange={(e) => onSearch(e.target.value)}
         className='flex-1 border rounded p-2 focus:outline-none focus:ring bg-transparent'
         style={{ color: 'var(--text)', borderColor: 'var(--border)' }}

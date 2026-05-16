@@ -1,33 +1,47 @@
 import axios from 'axios';
 
-// Create the axios instance
-const API = axios.create({
-  baseURL: 'http://localhost:5000/api',
+const API = axios.create({ 
+  baseURL: 'http://localhost:5000/api' 
 });
 
-// CRITICAL: This function runs BEFORE every request is sent
+// 1. Request Interceptor (Attaches the token)
 API.interceptors.request.use((req) => {
   const token = localStorage.getItem('token');
-  
   if (token) {
-    // Attach the token to the 'Authorization' header
-    // The backend 'auth.js' middleware expects this format
     req.headers.Authorization = `Bearer ${token}`;
   }
-  
   return req;
-}, (error) => {
-  return Promise.reject(error);
 });
 
+// ==========================================
+// 🔥 NEW: Response Interceptor (Catches Expired Tokens)
+// ==========================================
+API.interceptors.response.use(
+  (response) => response, // If the request succeeds, pass it through normally
+  (error) => {
+    // If the server returns a 401 Unauthorized, the token is dead
+    if (error.response && error.response.status === 401) {
+      console.warn("⚠️ Session expired or invalid token. Logging out...");
+      
+      // Clean up localStorage completely
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      
+      // Force reload to the login screen so the user can get a fresh token
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+// Your existing API exports...
 // --- Auth Endpoints ---
 export const login = (formData) => API.post('/auth/login', formData);
 export const signup = (formData) => API.post('/auth/signup', formData);
 
-// --- Task Endpoints ---
 export const getAllTasks = () => API.get('/tasks');
-export const createTask = (newTask) => API.post('/tasks', newTask);
-export const updateTask = (id, updatedTask) => API.put(`/tasks/${id}`, updatedTask);
+export const createTask = (taskData) => API.post('/tasks', taskData);
+export const updateTask = (id, updatedFields) => API.put(`/tasks/${id}`, updatedFields);
 export const deleteTask = (id) => API.delete(`/tasks/${id}`);
 export const shareTask = (id, email) => API.put(`/tasks/${id}/share`, { emailToShareWith: email });
 
