@@ -5,15 +5,15 @@
 A full-stack MERN application that allows users to manage tasks in real-time. This project has evolved from a basic CRUD app into a secure, multi-user collaboration platform featuring real-time notifications and role-based access control.
 
 ## ✨ New Features & Enhancements
-* **User Authentication:** Secure Signup and Login system using JWT (JSON Web Tokens).
-* **Role-Based Access (RBAC):** Distinction between Admin and User roles.
-* **Task Collaboration:** Admins can share specific tasks with other users via email.
-* **Real-Time Notifications:** Integrated Socket.io for instant alerts when tasks are shared or status updates occur.
-* **Task Ownership:** Secure logic ensuring users only manage tasks they own or are authorized to collaborate on.
-* **📅 Due Date Tracking:** Integrated an end-to-end task validation pipeline to assign, store, and display clean target dates seamlessly.
-* **Password Recovery:** Integrated Nodemailer for "Forgot Password" and "Reset Password" functionality.
-* **Progress Tracking:** Dynamic progress bar calculating completion percentage in real-time.
-* **Theme Management:** Persistent Dark/Light mode toggle.
+* ** User Authentication:** Secure Signup and Login system using JWT (JSON Web Tokens).
+* ** Role-Based Access (RBAC):** Distinction between Admin and User roles.
+* ** Task Collaboration:** Admins can share specific tasks with other users via email.
+* ** Real-Time Notifications:** Integrated Socket.io for instant alerts when tasks are shared or status updates occur.
+* ** Task Ownership:** Secure logic ensuring users only manage tasks they own or are authorized to collaborate on.
+* ** 📅 Due Date Tracking:** Integrated an end-to-end task validation pipeline to assign, store, and display clean target dates seamlessly.
+* ** Password Recovery:** Integrated Nodemailer for "Forgot Password" and "Reset Password" functionality.
+* ** Progress Tracking:** Dynamic progress bar calculating completion percentage in real-time.
+* ** Theme Management:** Persistent Dark/Light mode toggle.
 
 ## 🚀 Tech Stack
 * **Frontend:** React.js, Socket.io-client, Tailwind CSS
@@ -58,9 +58,6 @@ To run this project locally, follow these steps:
 * PUT /api/tasks/:id/share — (Admin Only) Shares a task with another user.
 
 * DELETE /api/tasks/:id — (Owner Only) Removes a specific task.
-### 📋 Part 2: Copy and paste this directly underneath Part 1
-```markdown
----
 
 ## 📅 Due Date Architecture
 
@@ -71,21 +68,55 @@ The framework handles dates through a safe validation-secure pathway, moving fro
 * **Route Validation Boundary (`taskRoutes.js`):** Leverages `express-validator` middleware rules to catch payloads before hitting standard model modifications. It drops empty string anomalies by converting them into unified `null` representations.
 
 ### 🗃️ Database Schema Matrix
+* Data models adhere to the following Mongoose architectural standards:
 
-Data items adhere to this underlying Mongoose layout standard:
+## 📌 Title (String)
 
-| Field Properties | Data Layout Types | Native Validations & Defaults | Operational Roles |
-| :--- | :--- | :--- | :--- |
-| **`title`** | `String` | `Required: true`, `Trimmed` | Core headline of the task assignment. |
-| **`description`** | `String` | Optional | Additional details and context notes. |
-| **`status`** | `String` | Enum: `['Pending', 'In Progress', 'Completed']`<br>Default: `'Pending'` | Current state within the development workflow. |
-| **`difficulty`** | `String` | Enum: `['Low', 'Medium', 'High']`<br>Default: `'Low'` | Operational urgency / resource consumption tier. |
-| **`dueDate`** | `Date` | Optional, `ISO8601` Verified | Target date for task completion. |
-| **`owner`** | `ObjectId` | `Ref: 'User'`, `Required: true` | Tracks individual user ownership rules. |
-| **`sharedWith`** | `Array (ObjectIds)` | `Ref: 'User'` array | Controls access permissions for collaborative tasks. |
-| **`timestamps`** | `Boolean` | `{ timestamps: true }` | Automatically records `createdAt` and `updatedAt` logs. |
+* Rules: Required, Trimmed
 
----
+* Role: The core headline or name of the task assignment.
+
+## 📝 Description (String)
+
+* Rules: Optional
+
+* Role: Provides deeper details, requirements, and context notes.
+
+## 🔄 Status (String)
+
+* Rules: Enum: ['Pending', 'In Progress', 'Completed'] | Default: 'Pending'
+
+* Role: Tracks the current progress of the item within the lifecycle.
+
+## ⚡ Difficulty (String)
+
+*  Rules: Enum: ['Low', 'Medium', 'High'] | Default: 'Low'
+
+* Role: Measures operational urgency and resource consumption tier.
+
+## 📅 Due Date (Date)
+
+* Rules: Optional, ISO8601 Verified
+
+* Role: Sets the concrete calendar deadline for task completion.
+
+## 🔑 Owner (ObjectId)
+
+* Rules: Required, Ref: 'User'
+
+* Role: Maps absolute data ownership directly to the creator's ID.
+
+## 👥 Shared With (Array)
+
+* Rules: Array of ObjectIds, Ref: 'User'
+
+* Role: Manages collaborative permission arrays for team access.
+
+## ⏱️ Timestamps (Boolean)
+
+* Rules: { timestamps: true }
+
+* Role: Automatically injects and handles createdAt and updatedAt logs.
 
 ## 📸 Project Showcase
 
@@ -101,13 +132,19 @@ Data items adhere to this underlying Mongoose layout standard:
 ![Add Task](./screenshots/add-task.png)
 
 ### Dark Mode
-![Dark mode](./screenshots/Dark-mode.png)
+![Dark mode](./screenshots/dark-mode.png)
 
 ### Edit Task
-![Edit Task](./screenshots/editTask.png)
+![Edit Task](./screenshots/edit-Task.png)
 
 ### Login Page
 ![Login Page](./screenshots/login.png)
+
+### share task
+![share task](./screenshots/share-task.png)
+
+### Analytics
+![analytics](./screenshots/analytics.png)
 
 ### Signup Page
 ![Signup Page](./screenshots/Signup.png)
