@@ -132,7 +132,7 @@ The framework handles dates through a safe validation-secure pathway, moving fro
 ![Add Task](./screenshots/add-task.png)
 
 ### Dark Mode
-![Dark mode](./screenshots/dark-mode.png)
+![Dark mode](./screenshots/DarkMode.png)
 
 ### Edit Task
 ![Edit Task](./screenshots/edit-Task.png)
