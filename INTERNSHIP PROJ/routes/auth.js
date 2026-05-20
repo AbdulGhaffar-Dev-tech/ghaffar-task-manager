@@ -82,11 +82,6 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// 4. FORGOT PASSWORD & 5. UPDATE PASSWORD (Logic remains the same)
-// ... [Keep your existing forgot-password and update-password routes here] ...
-
-// --- FIXED EXPORTS ---
-// Instead of overwriting module.exports, we export an object containing everything
 module.exports = {
   router,          // Used in server.js: app.use('/api/auth', auth.router)
   authMiddleware,  // Used in taskRoutes.js: const { authMiddleware } = require('./auth')

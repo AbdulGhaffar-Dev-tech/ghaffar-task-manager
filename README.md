@@ -123,10 +123,11 @@ The framework handles dates through a safe validation-secure pathway, moving fro
 
 ### 🔔 Real-Time Collaboration
 * When an Admin shares a task, the user receives an instant notification without refreshing the page.
+* When the user edit the task , the admin receives an instant notification.*
 
 ## 📸 Screenshots
 
-### Main Dashboard
+### Main DashboardS
 ![Dashboard](./screenshots/Dashboard.d.png)
 
 ### Adding a New Task

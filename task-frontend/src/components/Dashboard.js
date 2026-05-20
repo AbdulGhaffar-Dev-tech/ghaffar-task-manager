@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
-
-// Strict UI Palette theme colors
+// Color palette for charts
 const COLORS = ['#6366f1', '#f59e0b', '#ef4444', '#10b981']; 
 
 const AnalyticsDashboard = () => {
