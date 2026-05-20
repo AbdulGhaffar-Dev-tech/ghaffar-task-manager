@@ -15,6 +15,7 @@ A full-stack MERN application that allows users to manage tasks in real-time. Th
 * ** Progress Tracking:** Dynamic progress bar calculating completion percentage in real-time.
 * ** Theme Management:** Persistent Dark/Light mode toggle.
 
+* **🚀 Unified Production Build:** Configured for Express v5 to serve static frontend production build files natively on a single live URL link.
 ## 🚀 Tech Stack
 * **Frontend:** React.js, Socket.io-client, Tailwind CSS
 * **Backend:** Node.js & Express.js

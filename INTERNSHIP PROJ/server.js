@@ -1,17 +1,18 @@
-const express = require ('express');
+const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const http = require('http');
+const path = require('path'); // Added for handling directory paths
 const { Server } = require('socket.io');
 require('dotenv').config();
 
 const app = express();
 
-// 1. Create HTTP Server and Socket.io instance
+// 1. Creating HTTP Server and Socket.io instance
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: "*", // Changed to wildcard so production URLs can connect seamlessly
     methods: ["GET", "POST", "PUT", "DELETE"]
   }
 });
@@ -20,7 +21,7 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
-// 3. Attach Socket.io to the request object
+// 3. Attachment of Socket.io to the request object
 app.use((req, res, next) => {
   req.io = io;
   next();
@@ -47,16 +48,24 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/mytaskmanag
   .then(() => console.log('✅ MongoDB Connected Successfully'))
   .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
-// 6. API Routes 
-// FIX: We must access .router because auth.js exports an object { router, authMiddleware, transporter }
+// 6. API Routes
 const authData = require('./routes/auth');
 app.use('/api/auth', authData.router); 
-
-// Standard import for task routes
 app.use('/api/tasks', require('./routes/taskRoutes'));
-
-// ADDED FOR WEEK 5: Link your new Analytics system
 app.use('/api/analytics', require('./routes/analytics'));
+
+// =========================================================================
+// 🔥 NEW: SERVE FRONTEND BUILD PRODUCTION FILES DIRECTLY FROM BACKEND
+// =========================================================================
+// 1. Tell Express to look inside your pasted "build" folder for frontend assets
+app.use(express.static(path.join(__dirname, 'build')));
+
+// 2. Fallback Wildcard Route: Redirect any non-API page requests to the React index entry point
+// ✅ UNIVERSAL REGEX LITERAL FIX FOR EXPRESS v5:
+app.get(/^\/(?!api).*/, (req, res) => {
+  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+});
+// =========================================================================
 
 // 7. Global Error Handler
 app.use((err, req, res, next) => {
@@ -64,7 +73,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Internal Server Error', error: err.message });
 });
 
-// 8. Start the Server
+// 8. Start the Server (Using server.listen to keep Socket.io operational!)
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`🚀 Server is sprinting on port ${PORT}`);
