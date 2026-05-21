@@ -10,8 +10,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 import io from 'socket.io-client';
-
-const socket = io('http://localhost:5000');
+const socket = io(window.location.origin);
 
 function App() {
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
@@ -22,7 +21,7 @@ function App() {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  // --- SOCKET.IO NOTIFICATION LOGIC ---
+  // --- SOCKET.IO REAL-TIME NOTIFICATIONS SETUP ---
   useEffect(() => {
     if (isLoggedIn) {
       const userData = JSON.parse(localStorage.getItem('user'));
@@ -65,7 +64,7 @@ function App() {
               {theme === 'light' ? '🌙' : '☀️'}
             </button>
             
-            {/* ADDED: Dynamic Analytics & Home Nav Buttons */}
+            {/*CONDITIONAL NAV LINKS BASED ON LOGIN STATE */}
             {isLoggedIn && (
               <>
                 <Link to="/" style={{ padding: '8px 16px', fontSize: '14px', textDecoration: 'none', background: '#e0e7ff', color: '#4f46e5', borderRadius: '6px', fontWeight: 'bold' }}>
