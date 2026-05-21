@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API = axios.create({ 
-  baseURL: 'http://localhost:5000/api' 
+  baseURL: '/api' 
 });
 
 // 1. Request Interceptor (Attaches the token)
@@ -13,9 +13,7 @@ API.interceptors.request.use((req) => {
   return req;
 });
 
-// ==========================================
-// 🔥 NEW: Response Interceptor (Catches Expired Tokens)
-// ==========================================
+// 2. Response Interceptor (Handles 401 Unauthorized globally)  
 API.interceptors.response.use(
   (response) => response, // If the request succeeds, pass it through normally
   (error) => {
@@ -34,8 +32,7 @@ API.interceptors.response.use(
   }
 );
 
-// Your existing API exports...
-// --- Auth Endpoints ---
+// 3. API Functions
 export const login = (formData) => API.post('/auth/login', formData);
 export const signup = (formData) => API.post('/auth/signup', formData);
 
