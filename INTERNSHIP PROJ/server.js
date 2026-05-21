@@ -44,10 +44,12 @@ io.on('connection', (socket) => {
 });
 
 // 5. Database Connection
-mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/mytaskmanager')
-  .then(() => console.log('✅ MongoDB Connected Successfully'))
-  .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
+const mongoURI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/taskmanager';
+
+mongoose.connect(mongoURI)
+  .then(() => console.log('🍃 Connected to MongoDB Atlas Successfully!'))
+  .catch((err) => console.error('❌ MongoDB Connection Error:', err));
 // 6. API Routes
 const authData = require('./routes/auth');
 app.use('/api/auth', authData.router); 
@@ -55,18 +57,16 @@ app.use('/api/tasks', require('./routes/taskRoutes'));
 app.use('/api/analytics', require('./routes/analytics'));
 
 // =========================================================================
-// 🔥 NEW: SERVE FRONTEND BUILD PRODUCTION FILES DIRECTLY FROM BACKEND
+//  SERVE FRONTEND BUILD PRODUCTION FILES DIRECTLY FROM BACKEND
 // =========================================================================
 // 1. Tell Express to look inside your pasted "build" folder for frontend assets
 app.use(express.static(path.join(__dirname, 'build')));
 
 // 2. Fallback Wildcard Route: Redirect any non-API page requests to the React index entry point
-// ✅ UNIVERSAL REGEX LITERAL FIX FOR EXPRESS v5:
 app.get(/^\/(?!api).*/, (req, res) => {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 // =========================================================================
-
 // 7. Global Error Handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
