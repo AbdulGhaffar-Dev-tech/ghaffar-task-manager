@@ -11,8 +11,8 @@ const transporter = nodemailer.createTransport({
   port: 465, 
   secure: true, 
   auth: {
-    user: 'um1697170@gmail.com', 
-    pass: 'dqxvqgeemlhursti'      
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASSWORD
   }
 });
 
@@ -81,12 +81,6 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ message: "Server error during login" });
   }
 });
-
-module.exports = {
-  router,          // Used in server.js: app.use('/api/auth', auth.router)
-  authMiddleware,  // Used in taskRoutes.js: const { authMiddleware } = require('./auth')
-  transporter      // Used in taskRoutes.js: const { transporter } = require('./auth')
-};
 
 // 4. FORGOT PASSWORD
 router.post('/forgot-password', async (req, res) => {
