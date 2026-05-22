@@ -44,8 +44,7 @@ io.on('connection', (socket) => {
 });
 
 // 5. Database Connection
-
-const mongoURL = process.env.MONGO_URL || 'mongodb://127.0.0.1:27017/taskmanager';
+const mongoURL = process.env.MONGO_URI;
 
 mongoose.connect(mongoURL)
   .then(() => console.log('🍃 Connected to MongoDB Atlas Successfully!'))
