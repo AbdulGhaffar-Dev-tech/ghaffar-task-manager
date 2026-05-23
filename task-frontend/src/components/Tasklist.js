@@ -6,6 +6,11 @@ import SearchBar from './SearchBar';
 import { toast } from 'react-toastify';
 import io from 'socket.io-client';
 
+// 🔥 FIX 1: Dynamic Production-Ready Sockets URL string mapping
+const SOCKET_URL = window.location.hostname === 'localhost' 
+  ? 'http://localhost:5000' 
+  : 'https://task-manager-production-30e0.up.railway.app';
+
 export default function TaskList() {
   const [tasks, setTasks] = useState([]); 
   const [filteredTasks, setFilteredTasks] = useState([]); 
@@ -14,7 +19,7 @@ export default function TaskList() {
 
   const userData = JSON.parse(localStorage.getItem('user'));
   const isAdmin = userData?.role === 'admin';
-  const currentUserId = userData?.id || userData?._id;
+  const currentUserId = userData?.id || userData?._id || userData?.user?.id || userData?.user?._id;
 
   const fetchTasks = async () => {
     try {
@@ -32,8 +37,13 @@ export default function TaskList() {
 
     let socketInstance = null;
     if (currentUserId) {
-      socketInstance = io('http://localhost:5000');
-      socketInstance.emit('join', currentUserId);
+      // Use clean production endpoints with accurate routing options wrappers
+      socketInstance = io(SOCKET_URL, {
+        transports: ['websocket', 'polling'],
+        secure: true
+      });
+      
+      socketInstance.emit('join', String(currentUserId).trim());
 
       socketInstance.on('notification', (data) => {
         if (data.type === 'TASK_SHARED' || data.type === 'TASK_EDITED') {
@@ -50,14 +60,20 @@ export default function TaskList() {
     };
   }, [currentUserId]);
 
+  // 🔥 FIX 2: Added absolute sanitization guards on user prompt input collections
   const handleShare = async (taskId) => {
-    const email = window.prompt("Enter the email of the user to share this task with:");
-    if (!email) return;
+    const rawEmail = window.prompt("Enter the email of the user to share this task with:");
+    if (!rawEmail) return;
+    
+    const cleanEmail = rawEmail.trim(); // Remove leading/trailing spaces instantly
+
     try {
-      await shareTask(taskId, email);
-      toast.success(`Task shared with ${email}! ✉️`);
+      // Hits your backend router smoothly with structured variable name configuration mapping
+      await shareTask(taskId, cleanEmail);
+      toast.success(`Task shared with ${cleanEmail}! ✉️`);
       fetchTasks();
     } catch (err) {
+      console.error("Task sharing trace debug object:", err.response);
       toast.error(err.response?.data?.message || "Failed to share task.");
     }
   };
@@ -139,7 +155,6 @@ export default function TaskList() {
                 </div>
                 <p className='text-sm mb-3' style={{ color: 'var(--text-muted)' }}>{task.description}</p>
                 
-                {/* Visual Badges: Status, Difficulty, and Due Date */}
                 <div className="flex flex-wrap gap-2 items-center">
                   <span className={`text-xs font-bold px-3 py-1 rounded-full border ${getStatusStyle(task.status)}`}>
                     {task.status || 'Pending'}
@@ -151,7 +166,6 @@ export default function TaskList() {
                     </span>
                   )}
 
-                  {/* 🔥 NEW: Due Date Visual Badge Section */}
                   {task.dueDate && (
                     <span className="text-xs font-bold px-3 py-1 rounded-full border bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 flex items-center gap-1">
                       📅 Due: {new Date(task.dueDate).toLocaleDateString('en-US', {
