@@ -11,26 +11,27 @@ import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 import io from 'socket.io-client';
 
-// 🔥 FIXED FOR PRODUCTION: Dynamic Socket.io connection logic matching socket.js
-const SOCKET_URL = window.location.hostname === 'localhost' 
+// ✅ FIXED FOR PRODUCTION: Dynamic URL matching your explicit Railway live domain
+const SOCKET_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:5000' 
-  : 'https://task-manager-production-30e0.up.railway.app';
+  : 'https://ghaffar-task-manager-production.up.railway.app';
 
 const socket = io(SOCKET_URL, {
   transports: ['websocket', 'polling'],
-  secure: true
+  secure: true,
+  withCredentials: true // ✅ Crucial to match your backend Express CORS setup
 });
 
 function App() {
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
 
-  // 🔥 FIX 1: Apply the active theme class directly to the HTML document wrapper
+  // Apply the active theme class directly to the HTML document wrapper
   useEffect(() => {
     const root = window.document.documentElement;
     if (theme === 'dark') {
       root.classList.add('dark');
-      root.setAttribute('data-theme', 'dark'); // Useful if using custom data-theme CSS structures
+      root.setAttribute('data-theme', 'dark');
     } else {
       root.classList.remove('dark');
       root.setAttribute('data-theme', 'light');
@@ -67,7 +68,7 @@ function App() {
     };
   }, [isLoggedIn]);
 
-  // 🔥 FIX 2: Sync updated selection setting cleanly with localStorage persistent memory
+  // Sync updated selection setting cleanly with localStorage persistent memory
   const toggleTheme = () => {
     const nextTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(nextTheme);
