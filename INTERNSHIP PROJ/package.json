@@ -4,9 +4,9 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-  "start": "node server.js",
-  "build": "echo 'Frontend already compiled locally'"
-},
+    "start": "node server.js",
+    "build": "echo 'Frontend already compiled locally'"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -19,6 +19,7 @@
     "express-validator": "^7.3.2",
     "joi": "^18.1.2",
     "jsonwebtoken": "^9.0.3",
+    "mongobd": "^0.0.1-security.0",
     "mongodb": "^7.2.0",
     "mongoose": "^9.5.0",
     "nodemailer": "^8.0.5",

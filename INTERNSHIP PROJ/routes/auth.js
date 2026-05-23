@@ -11,9 +11,9 @@ const transporter = nodemailer.createTransport({
   port: 465, 
   secure: true, 
   auth: {
-  user: process.env.GMAIL_USER,
-  pass: process.env.GMAIL_PASSWORD
-}
+    user: 'um1697170@gmail.com', 
+    pass: 'dqxvqgeemlhursti'      
+  }
 });
 
 // --- AUTH MIDDLEWARE FUNCTION ---

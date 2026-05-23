@@ -10,31 +10,38 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 import io from 'socket.io-client';
-const socket = io(window.location.origin);
+
+const socket = io('http://localhost:5000');
 
 function App() {
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
 
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  // --- SOCKET.IO REAL-TIME NOTIFICATIONS SETUP ---
+  // --- SOCKET.IO REAL-TIME NOTIFICATIONS SETUP (FIXED) ---
   useEffect(() => {
     if (isLoggedIn) {
       const userData = JSON.parse(localStorage.getItem('user'));
       
-      if (userData && userData.id) {
-        socket.emit('join', userData.id);
+      // ✅ FIXED: Safely resolve either .id OR MongoDB's native ._id string
+      const actualUserId = userData?.id || userData?._id || userData?.user?.id || userData?.user?._id;
 
+      if (actualUserId) {
+        const sanitizedRoomId = String(actualUserId).trim();
+        console.log(`🔗 Attempting to join personal Socket room: ${sanitizedRoomId}`);
+        
+        socket.emit('join', sanitizedRoomId);
+
+        // Listen for real-time payloads
+        socket.off('notification'); // Clear duplicate listeners
         socket.on('notification', (data) => {
+          console.log("🔔 NOTIFICATION RECEIVED LIVE:", data);
           toast.info(data.message, {
             icon: "🔔",
             autoClose: 5000,
           });
         });
+      } else {
+        console.error("❌ Socket Error: Could not find a valid User ID in local storage payload.");
       }
     }
 
@@ -42,7 +49,6 @@ function App() {
       socket.off('notification');
     };
   }, [isLoggedIn]);
-
   const toggleTheme = () => setTheme(theme === 'light' ? 'dark' : 'light');
 
   const handleLogout = () => {
@@ -64,7 +70,7 @@ function App() {
               {theme === 'light' ? '🌙' : '☀️'}
             </button>
             
-            {/*CONDITIONAL NAV LINKS BASED ON LOGIN STATE */}
+            {/* ADDED: Dynamic Analytics & Home Nav Buttons */}
             {isLoggedIn && (
               <>
                 <Link to="/" style={{ padding: '8px 16px', fontSize: '14px', textDecoration: 'none', background: '#e0e7ff', color: '#4f46e5', borderRadius: '6px', fontWeight: 'bold' }}>
