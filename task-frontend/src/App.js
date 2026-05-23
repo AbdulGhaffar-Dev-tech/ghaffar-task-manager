@@ -1,28 +1,46 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom'; // ADDED: Link import here
+import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
 import TaskList from './components/TaskList'; 
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword'; 
 import Login from './components/Login';
 import Signup from './components/Signup';
-import AnalyticsDashboard from './components/AnalyticsDashboard'; // ADDED: Import Analytics Page
+import AnalyticsDashboard from './components/AnalyticsDashboard'; 
 import { ToastContainer, toast } from 'react-toastify'; 
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 import io from 'socket.io-client';
 
-const socket = io('http://localhost:5000');
+// 🔥 FIXED FOR PRODUCTION: Dynamic Socket.io connection logic matching socket.js
+const SOCKET_URL = window.location.hostname === 'localhost' 
+  ? 'http://localhost:5000' 
+  : 'https://task-manager-production-30e0.up.railway.app';
+
+const socket = io(SOCKET_URL, {
+  transports: ['websocket', 'polling'],
+  secure: true
+});
 
 function App() {
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
 
-  // --- SOCKET.IO REAL-TIME NOTIFICATIONS SETUP (FIXED) ---
+  // 🔥 FIX 1: Apply the active theme class directly to the HTML document wrapper
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+      root.setAttribute('data-theme', 'dark'); // Useful if using custom data-theme CSS structures
+    } else {
+      root.classList.remove('dark');
+      root.setAttribute('data-theme', 'light');
+    }
+  }, [theme]);
+
+  // --- SOCKET.IO REAL-TIME NOTIFICATIONS SETUP ---
   useEffect(() => {
     if (isLoggedIn) {
       const userData = JSON.parse(localStorage.getItem('user'));
-      
-      // ✅ FIXED: Safely resolve either .id OR MongoDB's native ._id string
       const actualUserId = userData?.id || userData?._id || userData?.user?.id || userData?.user?._id;
 
       if (actualUserId) {
@@ -31,8 +49,7 @@ function App() {
         
         socket.emit('join', sanitizedRoomId);
 
-        // Listen for real-time payloads
-        socket.off('notification'); // Clear duplicate listeners
+        socket.off('notification'); 
         socket.on('notification', (data) => {
           console.log("🔔 NOTIFICATION RECEIVED LIVE:", data);
           toast.info(data.message, {
@@ -49,7 +66,13 @@ function App() {
       socket.off('notification');
     };
   }, [isLoggedIn]);
-  const toggleTheme = () => setTheme(theme === 'light' ? 'dark' : 'light');
+
+  // 🔥 FIX 2: Sync updated selection setting cleanly with localStorage persistent memory
+  const toggleTheme = () => {
+    const nextTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(nextTheme);
+    localStorage.setItem('theme', nextTheme);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -60,7 +83,7 @@ function App() {
 
   return (
     <Router>
-      <div className="App">
+      <div className={`App ${theme}`}>
         <header className="App-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '20px' }}>
           <h1 style={{ cursor: 'pointer' }}>
             <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>Task Management</Link>
@@ -70,7 +93,6 @@ function App() {
               {theme === 'light' ? '🌙' : '☀️'}
             </button>
             
-            {/* ADDED: Dynamic Analytics & Home Nav Buttons */}
             {isLoggedIn && (
               <>
                 <Link to="/" style={{ padding: '8px 16px', fontSize: '14px', textDecoration: 'none', background: '#e0e7ff', color: '#4f46e5', borderRadius: '6px', fontWeight: 'bold' }}>
@@ -93,11 +115,9 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           
-          {/* SECURE ROUTES: Protected by your login state */}
           <Route path="/" element={isLoggedIn ? <TaskList /> : <Navigate to="/login" />} />
           <Route path="/analytics" element={isLoggedIn ? <AnalyticsDashboard /> : <Navigate to="/login" />} />
 
-          {/* Catch-all Fallback */}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
 
