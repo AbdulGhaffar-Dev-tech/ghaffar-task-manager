@@ -1,7 +1,11 @@
 import axios from 'axios';
 
+const API_BASE_URL = window.location.hostname === 'localhost' 
+  ? 'http://localhost:5000/api' 
+  : 'https://task-manager-production-30e0.up.railway.app/api'; // 👈 Your live Railway URL + /api
+
 const API = axios.create({ 
-  baseURL: 'http://localhost:5000/api' 
+  baseURL: API_BASE_URL 
 });
 
 // 1. Request Interceptor (Attaches the token)
@@ -12,11 +16,11 @@ API.interceptors.request.use((req) => {
   }
   return req;
 });
+
 // 2. Response Interceptor (Handles 401 Unauthorized globally)
 API.interceptors.response.use(
-  (response) => response, // If the request succeeds, pass it through normally
+  (response) => response, 
   (error) => {
-    // If the server returns a 401 Unauthorized, the token is dead
     if (error.response && error.response.status === 401) {
       console.warn("⚠️ Session expired or invalid token. Logging out...");
       
@@ -31,6 +35,7 @@ API.interceptors.response.use(
   }
 );
 
+// 3. API Functions
 export const login = (formData) => API.post('/auth/login', formData);
 export const signup = (formData) => API.post('/auth/signup', formData);
 
