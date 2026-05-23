@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-// 🔥 FIX: Dynamically match local machine endpoints vs live production environments
-const API_BASE_URL = window.location.hostname === 'localhost'
-  ? 'http://localhost:5000/api' // Points straight to your local Node server port
-  : '/api';                      // Uses Vercel's vercel.json reverse proxy on production
+// ✅ Absolute URL fallback ensures production always talks to the live database, even on shared domains
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:5000/api'
+  : 'https://ghaffar-task-manager-production.up.railway.app/api'; 
 
 const API = axios.create({
   baseURL: API_BASE_URL
