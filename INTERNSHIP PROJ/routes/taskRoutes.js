@@ -17,15 +17,16 @@ const taskValidation = [
   body('dueDate').optional().isISO8601().withMessage('Invalid date format'),
 ];
 
-// --- 1. SHARE TASK (Authorized Admins Only) ---
-// ✅ FIX 1: Changed from router.put to router.post to match frontend API calls
+// --- 1. SHARE TASK (Authorized Admins Only + Explicit Email Bypass) ---
 router.post('/:id/share', authMiddleware, async (req, res) => {
   try {
-    // ✅ FIX 2: Changed emailToShareWith to email to match frontend payload body keys
     const { email } = req.body; 
     
-    // Check if the logged-in user is an Admin (Role Authorization)
-    if (req.user.role !== 'admin') {
+    // 👑 FORCE ADMIN ACCESS FOR YOUR PRODUCTION ACCOUNT EMAIL
+    const isSystemAdmin = req.user.role === 'admin';
+    const isYourEmail = req.user.email && req.user.email.toLowerCase().trim() === 'muhammdaslamm9977@gmail.com';
+
+    if (!isSystemAdmin && !isYourEmail) {
       return res.status(403).json({ 
         message: "Access Denied: Only Admins are allowed to share tasks." 
       });
