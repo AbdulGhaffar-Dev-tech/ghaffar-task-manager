@@ -29,6 +29,13 @@ router.put('/:id/share', authMiddleware, async (req, res) => {
       });
     }
 
+    if (!emailToShareWith) {
+      return res.status(400).json({ message: "Recipient email is required." });
+    }
+
+    // 🧼 Sanitize input: strip hidden edge spaces and force lowercase
+    const sanitizedEmail = emailToShareWith.trim().toLowerCase();
+
     const task = await Task.findById(req.params.id);
     if (!task) return res.status(404).json({ message: "Task not found" });
 
@@ -37,16 +44,27 @@ router.put('/:id/share', authMiddleware, async (req, res) => {
       return res.status(403).json({ message: "Access Denied: You can only share tasks you created." });
     }
 
-   const recipient = await User.findOne({ email: { $regex: `^${emailToShareWith}$`, $options: 'i' } });
-    if (!recipient) return res.status(404).json({ message: "Recipient user not found." });
+    // High performance direct lookup first
+    let recipient = await User.findOne({ email: sanitizedEmail });
+    
+    // Defensive fallback: If direct match misses, search case-insensitively via regex bounds
+    if (!recipient) {
+      recipient = await User.findOne({ email: { $regex: `^${sanitizedEmail}$`, $options: 'i' } });
+    }
+
+    if (!recipient) {
+      return res.status(404).json({ message: "Recipient user not found." });
+    }
 
     // Prevent sharing with yourself
     if (recipient._id.toString() === req.user.id) {
-        return res.status(400).json({ message: "You cannot share a task with yourself." });
+      return res.status(400).json({ message: "You cannot share a task with yourself." });
     }
 
-    // Perform sharing logic
-    if (!task.sharedWith.includes(recipient._id)) {
+    // Map ObjectIds safely to strings for an accurate presence lookup array check
+    const sharedWithIds = task.sharedWith.map(id => id.toString());
+
+    if (!sharedWithIds.includes(recipient._id.toString())) {
       task.sharedWith.push(recipient._id);
       await task.save();
 
@@ -62,17 +80,18 @@ router.put('/:id/share', authMiddleware, async (req, res) => {
       try {
         await transporter.sendMail({
           from: '"Task Manager Admin" <um1697170@gmail.com>',
-          to: emailToShareWith,
+          to: recipient.email,
           subject: 'A task has been shared with you!',
           text: `Hello ${recipient.name}, Admin ${req.user.name} shared a task: "${task.title}".`
         });
       } catch (mailErr) {
-        console.error("Email failed but database updated:", mailErr.message);
+        console.error("❌ Email transmission failed but database saved successfully:", mailErr.message);
       }
     }
 
     res.json({ message: "Task shared successfully" });
   } catch (err) {
+    console.error("💥 Error during task sharing route execution:", err);
     res.status(500).json({ message: "Server error during sharing" });
   }
 });
@@ -98,7 +117,7 @@ router.get('/', authMiddleware, async (req, res) => {
       filter.status = status;
     }
 
-    // ✅ FIXED ROOT CAUSE: Separated search logic so it doesn't smash or override permissions
+    // Query safely inside isolated $and index bounds so visibility parameters are preserved
     if (search) {
       filter.$and.push({
         $or: [
@@ -111,7 +130,7 @@ router.get('/', authMiddleware, async (req, res) => {
     const tasks = await Task.find(filter).sort({ createdAt: -1 });
     res.json(tasks);
   } catch (err) {
-    console.error("Fetch tasks error:", err);
+    console.error("💥 Fetch tasks error:", err);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -129,14 +148,14 @@ router.post('/', authMiddleware, taskValidation, async (req, res) => {
       description,
       status,
       difficulty,
-      dueDate: dueDate || null, // Ensure a clean value or null gets committed cleanly
+      dueDate: dueDate || null, 
       owner: req.user.id 
     });
 
     const savedTask = await newTask.save();
     res.status(201).json(savedTask);
   } catch (err) {
-    console.error("Creation Save Error:", err);
+    console.error("💥 Creation Save Error:", err);
     res.status(400).json({ message: "Error saving task" });
   }
 });
@@ -150,9 +169,9 @@ router.put('/:id', authMiddleware, taskValidation, async (req, res) => {
     const task = await Task.findById(req.params.id);
     if (!task) return res.status(404).json({ message: 'Task not found' });
 
-    // AUTH CHECK: Is user owner OR in sharedWith?
+    // AUTH CHECK: Is user owner OR in sharedWith array?
     const isOwner = task.owner.toString() === req.user.id;
-    const isCollaborator = task.sharedWith.includes(req.user.id);
+    const isCollaborator = task.sharedWith.map(id => id.toString()).includes(req.user.id);
 
     if (!isOwner && !isCollaborator) {
       return res.status(403).json({ message: "Access Denied: You are not authorized to edit this task." });
@@ -182,22 +201,24 @@ router.put('/:id', authMiddleware, taskValidation, async (req, res) => {
 
     res.json(updatedTask);
   } catch (err) {
-    console.error("Update route error:", err);
+    console.error("💥 Update route error:", err);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
+// --- 5. GET SHARED TASKS ---
 router.get('/shared-with-me', authMiddleware, async (req, res) => {
   try {
     const sharedTasks = await Task.find({ sharedWith: req.user.id })
       .populate('owner', 'name email');
     res.json(sharedTasks);
   } catch (err) {
+    console.error("💥 Error fetching shared tasks:", err);
     res.status(500).json({ message: "Error fetching shared tasks" });
   }
 });
 
-// --- 5. DELETE TASK (Authorized Owners Only) ---
+// --- 6. DELETE TASK (Authorized Owners Only) ---
 router.delete('/:id', authMiddleware, async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
@@ -211,6 +232,7 @@ router.delete('/:id', authMiddleware, async (req, res) => {
     await Task.findByIdAndDelete(req.params.id);
     res.json({ message: "Task deleted successfully" });
   } catch (err) {
+    console.error("💥 Delete failed:", err);
     res.status(500).json({ message: "Delete failed" });
   }
 });
