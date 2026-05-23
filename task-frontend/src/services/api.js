@@ -1,9 +1,11 @@
 import axios from 'axios';
 
-const API = axios.create({ 
-  baseURL: 'http://localhost:5000/api' 
-});
+// ✅ Correct setup for a single-domain Vercel deployment
+const API_BASE_URL = '/api'; 
 
+const API = axios.create({ 
+  baseURL: API_BASE_URL 
+});
 // 1. Request Interceptor (Attaches the token)
 API.interceptors.request.use((req) => {
   const token = localStorage.getItem('token');
