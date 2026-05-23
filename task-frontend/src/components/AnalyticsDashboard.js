@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+// ✅ Import your dynamic client configuration here as well
+import API from '../services/api'; 
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, AreaChart, Area } from 'recharts';
 
-// Strict UI Palette theme colors
 const COLORS = ['#6366f1', '#f59e0b', '#ef4444', '#10b981', '#3b82f6']; 
 
 const AnalyticsDashboard = () => {
@@ -11,17 +11,13 @@ const AnalyticsDashboard = () => {
     const [monthlyTrends, setMonthlyTrends] = useState([]); 
     const [loading, setLoading] = useState(true);
 
-   
     useEffect(() => {
         const fetchAnalytics = async () => {
             try {
-                const token = localStorage.getItem('token'); 
-                const config = { headers: { Authorization: `Bearer ${token}` } };
-
-                // Concurrent backend data fetching
-                const overviewRes = await axios.get('http://localhost:5000/api/analytics/overview', config);
-                const trendsRes = await axios.get('http://localhost:5000/api/analytics/trends', config);
-                const monthlyRes = await axios.get('http://localhost:5000/api/analytics/monthly', config); 
+                
+                const overviewRes = await API.get('/analytics/overview');
+                const trendsRes = await API.get('/analytics/trends');
+                const monthlyRes = await API.get('/analytics/monthly'); 
 
                 setOverview(overviewRes.data);
                 setTrends(trendsRes.data);
@@ -44,7 +40,6 @@ const AnalyticsDashboard = () => {
         return <div className="text-center p-10 text-red-500 font-medium">Failed to sync data components from host server.</div>;
     }
 
-    // --- FRONTEND FIX LOGIC: EXTRACT STRUCTURAL BREAKDOWNS ACCURATELY ---
     const pieData = overview.statusBreakdown && overview.statusBreakdown.length > 0
         ? overview.statusBreakdown.map(item => ({
             name: item._id || "Unassigned",
@@ -56,7 +51,6 @@ const AnalyticsDashboard = () => {
             { name: 'Completed', value: 0 }
           ];
 
-    // --- NEW LOGIC: RENDER DIFFICULTY DISTRIBUTION GRAPHICS ---
     const difficultyData = overview.difficultyBreakdown && overview.difficultyBreakdown.length > 0
         ? overview.difficultyBreakdown.map(item => ({
             name: `${item._id} Difficulty`,
@@ -97,7 +91,6 @@ const AnalyticsDashboard = () => {
                 Advanced Analytics Dashboard
             </h1>
             
-            {/* --- COUNTER CARD --- */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="analytics-card p-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg text-white transform hover:scale-[1.02] transition-all duration-300 ease-out">
                     <h3 className="text-sm font-medium uppercase opacity-80 tracking-wider">Total Active Tasks (All Scopes)</h3>
@@ -105,10 +98,7 @@ const AnalyticsDashboard = () => {
                 </div>
             </div>
 
-            {/* --- VISUALIZATION BOXES --- */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-4">
-                
-                {/* Chart Block 1: Status Distribution */}
                 <div className="chart-card bg-white p-6 rounded-xl shadow-md border border-gray-100 flex flex-col items-center transform hover:translate-y-[-4px] transition-all duration-300 ease-out">
                     <h3 className="text-lg font-bold text-gray-700 mb-4 w-full text-left border-b pb-2 transition-colors duration-300 chart-heading">
                         Task Status Distribution
@@ -141,7 +131,6 @@ const AnalyticsDashboard = () => {
                     </div>
                 </div>
 
-                {/* 🔥 FIXED CHART BLOCK 2: NEW TASK DIFFICULTY DISTRIBUTION */}
                 <div className="chart-card bg-white p-6 rounded-xl shadow-md border border-gray-100 flex flex-col items-center transform hover:translate-y-[-4px] transition-all duration-300 ease-out">
                     <h3 className="text-lg font-bold text-gray-700 mb-4 w-full text-left border-b pb-2 transition-colors duration-300 chart-heading">
                         ⚡ Task Difficulty Allocation
@@ -151,7 +140,7 @@ const AnalyticsDashboard = () => {
                             <Pie
                                 data={difficultyData}
                                 cx="50%" cy="45%"
-                                innerRadius={0} // Solid pie style
+                                innerRadius={0}
                                 outerRadius={85}
                                 paddingAngle={2}
                                 dataKey="value"
@@ -172,7 +161,6 @@ const AnalyticsDashboard = () => {
                     </div>
                 </div>
 
-                {/* Chart Block 3: Weekly Bar Trends */}
                 <div className="chart-card bg-white p-6 rounded-xl shadow-md border border-gray-100 flex flex-col items-center transform hover:translate-y-[-4px] transition-all duration-300 ease-out">
                     <h3 className="text-lg font-bold text-gray-700 mb-4 w-full text-left border-b pb-2 transition-colors duration-300 chart-heading">
                         Weekly Productivity Trends
@@ -199,7 +187,6 @@ const AnalyticsDashboard = () => {
                     </div>
                 </div>
 
-                {/* Chart Block 4: Long-Term Monthly Progress */}
                 <div className="chart-card bg-white p-6 rounded-xl shadow-md border border-gray-100 flex flex-col items-center lg:col-span-2 transform hover:translate-y-[-4px] transition-all duration-300 ease-out">
                     <h3 className="text-lg font-bold text-gray-700 mb-4 w-full text-left border-b pb-2 transition-colors duration-300 chart-heading">
                         Long-Term Monthly Progress Analytics
@@ -225,7 +212,6 @@ const AnalyticsDashboard = () => {
                         </AreaChart>
                     </div>
                 </div>
-
             </div>
         </div>
     );

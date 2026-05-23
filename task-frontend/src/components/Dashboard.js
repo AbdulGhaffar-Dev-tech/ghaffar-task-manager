@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+// ✅ Import your unified dynamic API client instance instead of raw axios
+import API from '../services/api'; 
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
-// Color palette for charts
+
 const COLORS = ['#6366f1', '#f59e0b', '#ef4444', '#10b981']; 
 
 const AnalyticsDashboard = () => {
@@ -12,11 +13,9 @@ const AnalyticsDashboard = () => {
     useEffect(() => {
         const fetchAnalytics = async () => {
             try {
-                const token = localStorage.getItem('token'); 
-                const config = { headers: { Authorization: `Bearer ${token}` } };
-
-                const overviewRes = await axios.get('http://localhost:5000/api/analytics/overview', config);
-                const trendsRes = await axios.get('http://localhost:5000/api/analytics/trends', config);
+                
+                const overviewRes = await API.get('/analytics/overview');
+                const trendsRes = await API.get('/analytics/trends');
 
                 setOverview(overviewRes.data);
                 setTrends(trendsRes.data);
@@ -38,7 +37,6 @@ const AnalyticsDashboard = () => {
         return <div className="text-center p-10 text-red-500 font-medium">Failed to sync data components from host server.</div>;
     }
 
-    // --- LOGIC: DEFINE COMPACT SAFE PIE STRUCTURES ---
     const pieData = overview.statusBreakdown && overview.statusBreakdown.length > 0
         ? overview.statusBreakdown.map(item => ({
             name: item._id || "Unassigned",
@@ -50,7 +48,6 @@ const AnalyticsDashboard = () => {
             { name: 'Completed (Demo)', value: 4 }
           ];
 
-    // --- LOGIC: DEFINE COMPACT SAFE BAR TREND STRUCTURES ---
     const barData = trends && trends.length > 0 
         ? trends.map(item => ({
             _id: item._id,
@@ -69,7 +66,6 @@ const AnalyticsDashboard = () => {
         <div className="p-6 max-w-6xl mx-auto space-y-6 bg-gray-50 rounded-2xl min-h-screen">
             <h1 className="text-3xl font-extrabold text-gray-800 tracking-tight">Advanced Analytics Dashboard</h1>
             
-            {/* --- COUNTER CARD --- */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="p-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-md text-white">
                     <h3 className="text-sm font-medium uppercase opacity-80 tracking-wider">Total System Tasks</h3>
@@ -77,10 +73,7 @@ const AnalyticsDashboard = () => {
                 </div>
             </div>
 
-            {/* --- VISUALIZATION BOXES --- */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-4">
-                
-                {/* Chart Block 1: Pie Structure */}
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col items-center">
                     <h3 className="text-lg font-bold text-gray-700 mb-4 w-full text-left">Task Status Distribution</h3>
                     <div className="w-full flex justify-center items-center" style={{ minHeight: '320px' }}>
@@ -103,7 +96,6 @@ const AnalyticsDashboard = () => {
                     </div>
                 </div>
 
-                {/* Chart Block 2: Bar Structure */}
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col items-center">
                     <h3 className="text-lg font-bold text-gray-700 mb-4 w-full text-left">Weekly Productivity Trends</h3>
                     <div className="w-full flex justify-center items-center" style={{ minHeight: '320px' }}>
@@ -117,7 +109,6 @@ const AnalyticsDashboard = () => {
                         </BarChart>
                     </div>
                 </div>
-
             </div>
         </div>
     );
