@@ -18,9 +18,11 @@ const taskValidation = [
 ];
 
 // --- 1. SHARE TASK (Authorized Admins Only) ---
-router.put('/:id/share', authMiddleware, async (req, res) => {
+// ✅ FIX 1: Changed from router.put to router.post to match frontend API calls
+router.post('/:id/share', authMiddleware, async (req, res) => {
   try {
-    const { emailToShareWith } = req.body;
+    // ✅ FIX 2: Changed emailToShareWith to email to match frontend payload body keys
+    const { email } = req.body; 
     
     // Check if the logged-in user is an Admin (Role Authorization)
     if (req.user.role !== 'admin') {
@@ -29,12 +31,12 @@ router.put('/:id/share', authMiddleware, async (req, res) => {
       });
     }
 
-    if (!emailToShareWith) {
+    if (!email) {
       return res.status(400).json({ message: "Recipient email is required." });
     }
 
     // 🧼 Sanitize input: strip hidden edge spaces and force lowercase
-    const sanitizedEmail = emailToShareWith.trim().toLowerCase();
+    const sanitizedEmail = email.trim().toLowerCase();
 
     const task = await Task.findById(req.params.id);
     if (!task) return res.status(404).json({ message: "Task not found" });
