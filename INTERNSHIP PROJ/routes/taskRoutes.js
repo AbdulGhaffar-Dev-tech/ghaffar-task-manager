@@ -37,7 +37,7 @@ router.put('/:id/share', authMiddleware, async (req, res) => {
       return res.status(403).json({ message: "Access Denied: You can only share tasks you created." });
     }
 
-    const recipient = await User.findOne({ email: emailToShareWith });
+   const recipient = await User.findOne({ email: { $regex: `^${emailToShareWith}$`, $options: 'i' } });
     if (!recipient) return res.status(404).json({ message: "Recipient user not found." });
 
     // Prevent sharing with yourself
