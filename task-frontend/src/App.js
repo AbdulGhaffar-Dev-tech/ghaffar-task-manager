@@ -11,15 +11,15 @@ import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 import io from 'socket.io-client';
 
-// ✅ FIXED FOR PRODUCTION: Dynamic URL matching your explicit Railway live domain
+// ✅ ULTIMATE FIX: Uses a relative path in production so it automatically matches your active browser domain!
 const SOCKET_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:5000' 
-  : 'https://ghaffar-task-manager-production.up.railway.app';
+  : window.location.origin; // 🚀 Automatically becomes 'https://ghaffar-task-manager-production.up.railway.app' on live web browsers
 
 const socket = io(SOCKET_URL, {
   transports: ['websocket', 'polling'],
   secure: true,
-  withCredentials: true // ✅ Crucial to match your backend Express CORS setup
+  withCredentials: true
 });
 
 function App() {
