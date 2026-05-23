@@ -2,23 +2,34 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const http = require('http');
-const path = require('path'); // Added for handling directory paths
+const path = require('path'); // ✅ Required to map static frontend assets
 const { Server } = require('socket.io');
 require('dotenv').config();
 
 const app = express();
 
+// ✅ CORS Origins updated with your explicit live domain
+const allowedOrigins = [
+  'http://localhost:3000',                                     
+  'http://127.0.0.1:3000',                                   
+  'https://ghaffar-task-manager-production.up.railway.app'     
+];
+
 // 1. Creating HTTP Server and Socket.io instance
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*", // Changed to wildcard so production URLs can connect seamlessly
-    methods: ["GET", "POST", "PUT", "DELETE"]
+    origin: allowedOrigins,                    
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
   }
 });
 
 // 2. Essential Middleware
-app.use(cors());
+app.use(cors({
+  origin: allowedOrigins,                      
+  credentials: true
+}));
 app.use(express.json());
 
 // 3. Attachment of Socket.io to the request object
@@ -33,9 +44,14 @@ io.on('connection', (socket) => {
 
   socket.on('join', (userId) => {
     if (userId) {
-      socket.join(userId);
+      socket.join(userId.toString());
       console.log(`👤 User ${userId} joined their private notification room`);
     }
+  });
+
+  socket.on('join_admin_room', () => {
+    socket.join('admins');
+    console.log("🔒 Admin joined the 'admins' broadcast room");
   });
 
   socket.on('disconnect', () => {
@@ -54,16 +70,16 @@ app.use('/api/auth', authData.router);
 app.use('/api/tasks', require('./routes/taskRoutes'));
 app.use('/api/analytics', require('./routes/analytics'));
 
-//  Tell Express to look inside your pasted "build" folder for frontend assets
+// 🌐 Health check endpoint for Railway verification testing
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: "healthy", message: "Backend is operational!" });
+});
+
 app.use(express.static(path.join(__dirname, 'build')));
 
-//  Fallback Wildcard Route: Redirect any non-API page requests to the React index entry point
-
-app.get(/^\/(?!api).*/, (req, res) => {
+app.get('*any', (req, res) => {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
-// =========================================================================
-
 // 7. Global Error Handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
@@ -73,5 +89,5 @@ app.use((err, req, res, next) => {
 // 8. Start the Server (Using server.listen to keep Socket.io operational!)
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
-  console.log(`🚀 Server is sprinting on port ${PORT}`);
+  console.log(`🚀 Server is running on port ${PORT}`);
 });
