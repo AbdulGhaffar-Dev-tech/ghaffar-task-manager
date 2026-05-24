@@ -75,6 +75,9 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ status: "healthy", message: "Backend is operational!" });
 });
 
+// Serve uploaded attachments as static files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 app.use(express.static(path.join(__dirname, 'build')));
 
 app.get('*any', (req, res) => {

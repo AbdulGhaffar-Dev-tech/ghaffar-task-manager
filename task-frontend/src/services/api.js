@@ -42,4 +42,16 @@ export const getAllTasks = () => API.get('/tasks');
 export const deleteTask = (id) => API.delete(`/tasks/${id}`);
 export const shareTask = (id, email) => API.put(`/tasks/${id}/share`, { emailToShareWith: email });
 
+// Attachment endpoints
+export const uploadAttachments = (taskId, files) => {
+  const formData = new FormData();
+  files.forEach(file => formData.append('files', file));
+  return API.post(`/tasks/${taskId}/attachments`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+};
+
+export const deleteAttachment = (taskId, attachmentId) =>
+  API.delete(`/tasks/${taskId}/attachments/${attachmentId}`);
+
 export default API;

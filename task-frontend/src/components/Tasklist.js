@@ -1,10 +1,44 @@
 import { useEffect, useState } from 'react';
-import { getAllTasks, deleteTask, shareTask } from '../services/api'; 
+import { getAllTasks, deleteTask, shareTask } from '../services/api';
 import TaskForm from './TaskForm';
 import ProgressBar from './ProgressBar';
 import SearchBar from './SearchBar';
 import { toast } from 'react-toastify';
 import io from 'socket.io-client';
+
+// ── Attachment helpers ──────────────────────────────────────────────────────
+const isImage = (mimeType = '') => mimeType.startsWith('image/');
+
+const AttachmentBadge = ({ count }) => (
+  <span className="attachment-badge" title={`${count} attachment${count !== 1 ? 's' : ''}`}>
+    📎 {count}
+  </span>
+);
+
+const AttachmentPreviewStrip = ({ attachments }) => {
+  if (!attachments || attachments.length === 0) return null;
+  const images = attachments.filter(a => isImage(a.mimeType));
+  const others = attachments.filter(a => !isImage(a.mimeType));
+
+  return (
+    <div className="attachment-preview-strip">
+      {images.slice(0, 3).map(att => (
+        <a key={att._id} href={att.url} target="_blank" rel="noreferrer" className="attachment-strip-thumb-link">
+          <img src={att.url} alt={att.originalName} className="attachment-strip-thumb" title={att.originalName} />
+        </a>
+      ))}
+      {others.slice(0, 3).map(att => (
+        <a key={att._id} href={att.url} target="_blank" rel="noreferrer" className="attachment-strip-file" title={att.originalName}>
+          <span className="attachment-strip-file-icon">📄</span>
+          <span className="attachment-strip-file-name">{att.originalName.length > 14 ? att.originalName.slice(0, 12) + '…' : att.originalName}</span>
+        </a>
+      ))}
+      {attachments.length > 6 && (
+        <span className="attachment-strip-more">+{attachments.length - 6} more</span>
+      )}
+    </div>
+  );
+};
 
 // 🔥 FIX 1: Dynamic Production-Ready Sockets URL string mapping
 const SOCKET_URL = window.location.hostname === 'localhost' 
@@ -120,12 +154,12 @@ export default function TaskList() {
     <div className='p-6 max-w-4xl mx-auto'>
       <ProgressBar tasks={tasks} />
       
-      <div className='flex justify-between items-center mb-6'>
+      <div className='task-list-header flex justify-between items-center mb-6'>
         <div className="flex flex-col">
           <h1 className='text-3xl font-bold tracking-tight' style={{ color: 'var(--text-main)' }}>My Tasks</h1>
           {isAdmin && <span className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mt-1">Administrator Mode</span>}
         </div>
-        <button onClick={() => { setEditing(null); setShowModal(true); }} className='btn-primary'>
+        <button onClick={() => { setEditing(null); setShowModal(true); }} className='btn-primary task-list-new-btn'>
           + New Task
         </button>
       </div>
@@ -175,7 +209,15 @@ export default function TaskList() {
                       })}
                     </span>
                   )}
+
+                  {task.attachments?.length > 0 && (
+                    <AttachmentBadge count={task.attachments.length} />
+                  )}
                 </div>
+
+                {task.attachments?.length > 0 && (
+                  <AttachmentPreviewStrip attachments={task.attachments} />
+                )}
               </div>
 
               <div className='flex gap-2 ml-4 items-center'>

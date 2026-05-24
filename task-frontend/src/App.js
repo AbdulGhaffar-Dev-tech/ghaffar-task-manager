@@ -85,24 +85,24 @@ function App() {
   return (
     <Router>
       <div className={`App ${theme}`}>
-        <header className="App-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '20px' }}>
+        <header className="App-header">
           <h1 style={{ cursor: 'pointer' }}>
             <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>Task Management</Link>
           </h1>
-          <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-            <button className="theme-toggle" onClick={toggleTheme} style={{ position: 'static' }}>
-              {theme === 'light' ? '🌙' : '☀️'}
+          <div className="header-actions">
+            <button className="theme-toggle" onClick={toggleTheme}>
+              {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
             </button>
-            
+
             {isLoggedIn && (
               <>
-                <Link to="/" style={{ padding: '8px 16px', fontSize: '14px', textDecoration: 'none', background: '#e0e7ff', color: '#4f46e5', borderRadius: '6px', fontWeight: 'bold' }}>
+                <Link to="/" style={{ padding: '8px 14px', fontSize: '14px', textDecoration: 'none', background: '#e0e7ff', color: '#4f46e5', borderRadius: '8px', fontWeight: '700', whiteSpace: 'nowrap' }}>
                   📋 Tasks
                 </Link>
-                <Link to="/analytics" style={{ padding: '8px 16px', fontSize: '14px', textDecoration: 'none', background: '#6366f1', color: 'white', borderRadius: '6px', fontWeight: 'bold' }}>
+                <Link to="/analytics" style={{ padding: '8px 14px', fontSize: '14px', textDecoration: 'none', background: '#6366f1', color: 'white', borderRadius: '8px', fontWeight: '700', whiteSpace: 'nowrap' }}>
                   📊 Analytics
                 </Link>
-                <button onClick={handleLogout} className="btn-delete" style={{ padding: '8px 16px', fontSize: '14px' }}>
+                <button onClick={handleLogout} className="btn-delete" style={{ padding: '8px 14px', fontSize: '14px' }}>
                   Logout
                 </button>
               </>

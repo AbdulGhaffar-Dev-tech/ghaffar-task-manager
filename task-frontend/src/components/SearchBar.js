@@ -1,7 +1,7 @@
 
 export default function SearchBar({ onSearch, onFilter }) {
   return (
-    <div className='flex gap-3 mb-4'>
+    <div className='search-filter-row flex gap-3 mb-4'>
       <input
         type="text"
         placeholder='Search tasks...'

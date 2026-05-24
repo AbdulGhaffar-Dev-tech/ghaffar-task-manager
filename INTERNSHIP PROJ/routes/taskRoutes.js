@@ -3,9 +3,36 @@ const router = express.Router();
 const Task = require('../models/Task');
 const User = require('../models/User'); 
 const { body, validationResult } = require('express-validator');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 // Destructure the imports from the object exported in auth.js
 const { authMiddleware, transporter } = require('./auth');
+
+// --- MULTER CONFIGURATION ---
+const UPLOADS_DIR = path.join(__dirname, '..', 'uploads');
+if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
+  filename: (_req, file, cb) => {
+    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    cb(null, `${unique}${path.extname(file.originalname)}`);
+  }
+});
+
+const fileFilter = (_req, file, cb) => {
+  const allowed = /jpeg|jpg|png|gif|webp|pdf|doc|docx|xls|xlsx|txt|zip|csv/;
+  const ext = path.extname(file.originalname).toLowerCase().replace('.', '');
+  allowed.test(ext) ? cb(null, true) : cb(new Error('File type not allowed'), false);
+};
+
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10 MB cap
+});
 
 // Validation rules
 const taskValidation = [
@@ -237,6 +264,72 @@ router.delete('/:id', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error("💥 Delete failed:", err);
     res.status(500).json({ message: "Delete failed" });
+  }
+});
+
+// --- 7. UPLOAD ATTACHMENTS TO A TASK ---
+router.post('/:id/attachments', authMiddleware, upload.array('files', 10), async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) return res.status(404).json({ message: 'Task not found' });
+
+    const isOwner = task.owner.toString() === req.user.id;
+    const isCollaborator = task.sharedWith.map(id => id.toString()).includes(req.user.id);
+    if (!isOwner && !isCollaborator) {
+      return res.status(403).json({ message: 'Access Denied: You cannot add attachments to this task.' });
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: 'No files were uploaded.' });
+    }
+
+    // Build the base URL dynamically from the request
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+
+    const newAttachments = req.files.map(file => ({
+      originalName: file.originalname,
+      storedName:   file.filename,
+      mimeType:     file.mimetype,
+      size:         file.size,
+      url:          `${baseUrl}/uploads/${file.filename}`
+    }));
+
+    task.attachments.push(...newAttachments);
+    await task.save();
+
+    res.status(201).json({ message: 'Files uploaded successfully', attachments: task.attachments });
+  } catch (err) {
+    console.error('💥 Attachment upload error:', err);
+    res.status(500).json({ message: err.message || 'Upload failed' });
+  }
+});
+
+// --- 8. DELETE AN ATTACHMENT FROM A TASK ---
+router.delete('/:id/attachments/:attachmentId', authMiddleware, async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) return res.status(404).json({ message: 'Task not found' });
+
+    const isOwner = task.owner.toString() === req.user.id;
+    const isCollaborator = task.sharedWith.map(id => id.toString()).includes(req.user.id);
+    if (!isOwner && !isCollaborator) {
+      return res.status(403).json({ message: 'Access Denied: You cannot remove attachments from this task.' });
+    }
+
+    const attachment = task.attachments.id(req.params.attachmentId);
+    if (!attachment) return res.status(404).json({ message: 'Attachment not found' });
+
+    // Remove the physical file from disk
+    const filePath = path.join(UPLOADS_DIR, attachment.storedName);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+    attachment.deleteOne();
+    await task.save();
+
+    res.json({ message: 'Attachment deleted successfully', attachments: task.attachments });
+  } catch (err) {
+    console.error('💥 Attachment delete error:', err);
+    res.status(500).json({ message: 'Failed to delete attachment' });
   }
 });
 
