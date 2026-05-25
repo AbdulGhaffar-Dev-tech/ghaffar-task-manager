@@ -59,10 +59,16 @@ io.on('connection', (socket) => {
   });
 });
 
-// 5. Database Connection
-mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/mytaskmanager')
-  .then(() => console.log('✅ MongoDB Connected Successfully'))
-  .catch(err => console.error('❌ MongoDB Connection Error:', err));
+// 5. Database Connection (FIXED: Safely checks MONGO_URI, MONGO_URL, or local fallback)
+const dbURI = process.env.MONGO_URI || process.env.MONGO_URL || 'mongodb://127.0.0.1:27017/mytaskmanager';
+
+console.log('🔄 Attempting initialization of the live database connection layer...');
+
+mongoose.connect(dbURI, {
+  serverSelectionTimeoutMS: 5000 // Fails fast in 5 seconds instead of hanging for 10 seconds
+})
+  .then(() => console.log('✅ MongoDB Connected Successfully to Active Database Instance'))
+  .catch(err => console.error('❌ MongoDB Initialization Connection Error:', err.message));
 
 // 6. API Routes
 const authData = require('./routes/auth');
@@ -75,9 +81,16 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ status: "healthy", message: "Backend is operational!" });
 });
 
+// Serve frontend build files
 app.use(express.static(path.join(__dirname, 'build')));
 
-app.get('*any', (req, res) => {
+// ✅ FINAL PRODUCTION FIX: Uses an explicit route parameter match instead of a raw literal asterisk string
+// Serve frontend build files
+app.use(express.static(path.join(__dirname, 'build')));
+
+// ✅ BULLETPROOF REGEX FIX: No strings, no wildcards. 
+// This matches any route that does NOT begin with /api, fully avoiding path-to-regexp parser crashes.
+app.get(/^\/(?!api).*$/, (req, res) => {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 // 7. Global Error Handler

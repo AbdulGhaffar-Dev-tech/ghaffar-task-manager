@@ -22,9 +22,9 @@ router.put('/:id/share', authMiddleware, async (req, res) => {
   try {
     let email = null;
 
-  // 🔍 DEEP PACKET SCANNER: Automatically scans all keys sent by the frontend
+    // 🔍 DEEP PACKET SCANNER: Automatically scans all keys sent by the frontend
     if (req.body && typeof req.body === 'object') {
-      // 1. Check direct keys first (Added emailToShareWith here!)
+      // 1. Check direct keys first
       email = req.body.email || 
               req.body.emailToShareWith || 
               req.body.recipientEmail || 
@@ -95,6 +95,11 @@ router.put('/:id/share', authMiddleware, async (req, res) => {
       return res.status(400).json({ message: "You cannot share a task with yourself." });
     }
 
+    // Defensive check to make sure sharedWith array initialization exists
+    if (!task.sharedWith) {
+      task.sharedWith = [];
+    }
+
     // Map ObjectIds safely to strings for an accurate presence lookup array check
     const sharedWithIds = task.sharedWith.map(id => id.toString());
 
@@ -130,11 +135,16 @@ router.put('/:id/share', authMiddleware, async (req, res) => {
   }
 });
 
-// --- 2. GET ALL TASKS (Owner or Collaborator) ---
+// --- 2. GET ALL TASKS (Owner or Collaborator - BUG FIX PROTECTION) ---
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const { search, status } = req.query;
     
+    // Safety guard: Ensure auth middleware injected identity variables correctly
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'Unauthorized access tracking block context' });
+    }
+
     // Core Authorization Base Filter
     const filter = {
       $and: [
@@ -162,26 +172,30 @@ router.get('/', authMiddleware, async (req, res) => {
     }
 
     const tasks = await Task.find(filter).sort({ createdAt: -1 });
-    res.json(tasks);
+    res.json(tasks || []); // Always return an array block mapping layout to protect frontends
   } catch (err) {
-    console.error("💥 Fetch tasks error:", err);
-    res.status(500).json({ message: 'Server error' });
+    console.error("💥 Fetch tasks array layer execution error:", err);
+    res.status(500).json({ message: 'Server error loading task records information', error: err.message });
   }
 });
 
-// --- 3. CREATE TASK ---
+// --- 3. CREATE TASK (FIXED: Added Debug Payload Loggers) ---
 router.post('/', authMiddleware, taskValidation, async (req, res) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+  if (!errors.isEmpty()) {
+    console.error("❌ TASK VALIDATION CRASH LOG DETAILS:", errors.array());
+    console.log("📦 Target payload values submitted were:", req.body);
+    return res.status(400).json({ errors: errors.array(), message: "Validation parameters rejected" });
+  }
 
   try {
     const { title, description, status, difficulty, dueDate } = req.body;
 
     const newTask = new Task({
-      title,
-      description,
-      status,
-      difficulty,
+      title: title.trim(),
+      description: description || '',
+      status: status || 'Pending',
+      difficulty: difficulty || 'Medium',
       dueDate: dueDate || null, 
       owner: req.user.id 
     });
@@ -189,8 +203,8 @@ router.post('/', authMiddleware, taskValidation, async (req, res) => {
     const savedTask = await newTask.save();
     res.status(201).json(savedTask);
   } catch (err) {
-    console.error("💥 Creation Save Error:", err);
-    res.status(400).json({ message: "Error saving task" });
+    console.error("💥 Creation Save Error inside database stream context:", err);
+    res.status(500).json({ message: "Error saving task to production instance collections", error: err.message });
   }
 });
 
@@ -205,7 +219,7 @@ router.put('/:id', authMiddleware, taskValidation, async (req, res) => {
 
     // AUTH CHECK: Is user owner OR in sharedWith array?
     const isOwner = task.owner.toString() === req.user.id;
-    const isCollaborator = task.sharedWith.map(id => id.toString()).includes(req.user.id);
+    const isCollaborator = task.sharedWith && task.sharedWith.map(id => id.toString()).includes(req.user.id);
 
     if (!isOwner && !isCollaborator) {
       return res.status(403).json({ message: "Access Denied: You are not authorized to edit this task." });
@@ -216,10 +230,10 @@ router.put('/:id', authMiddleware, taskValidation, async (req, res) => {
     const updatedTask = await Task.findByIdAndUpdate(
       req.params.id, 
       {
-        title,
-        description,
-        status,
-        difficulty,
+        title: title ? title.trim() : task.title,
+        description: description !== undefined ? description : task.description,
+        status: status !== undefined ? status : task.status,
+        difficulty: difficulty !== undefined ? difficulty : task.difficulty,
         dueDate: dueDate !== undefined ? dueDate : task.dueDate
       }, 
       { new: true }
@@ -245,7 +259,7 @@ router.get('/shared-with-me', authMiddleware, async (req, res) => {
   try {
     const sharedTasks = await Task.find({ sharedWith: req.user.id })
       .populate('owner', 'name email');
-    res.json(sharedTasks);
+    res.json(sharedTasks || []);
   } catch (err) {
     console.error("💥 Error fetching shared tasks:", err);
     res.status(500).json({ message: "Error fetching shared tasks" });
