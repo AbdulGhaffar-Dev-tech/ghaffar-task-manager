@@ -59,12 +59,11 @@ io.on('connection', (socket) => {
   });
 });
 
-// 5. Database Connection (Supports local, MONGODB_URI, or Railway's MONGO_URL)
-const dbURI = process.env.MONGODB_URI || process.env.MONGO_URL || 'mongodb://127.0.0.1:27017/mytaskmanager';
-
-mongoose.connect(dbURI)
-  .then(() => console.log('✅ MongoDB Connected Successfully to Cloud Cluster'))
+// 5. Database Connection
+mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/mytaskmanager')
+  .then(() => console.log('✅ MongoDB Connected Successfully'))
   .catch(err => console.error('❌ MongoDB Connection Error:', err));
+
 // 6. API Routes
 const authData = require('./routes/auth');
 app.use('/api/auth', authData.router); 
