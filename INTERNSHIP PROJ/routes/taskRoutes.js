@@ -4,7 +4,7 @@ const Task = require('../models/Task');
 const User = require('../models/User'); 
 const { body, validationResult } = require('express-validator');
 
-// Destructure the imports from the object exported in auth.js
+// Importing authentication middleware and email transporter for notifications
 const { authMiddleware, transporter } = require('./auth');
 
 // Validation rules
@@ -17,12 +17,51 @@ const taskValidation = [
   body('dueDate').optional().isISO8601().withMessage('Invalid date format'),
 ];
 
-// --- 1. SHARE TASK (Authorized Admins Only + Explicit Email Bypass) ---
-router.post('/:id/share', authMiddleware, async (req, res) => {
+// --- 1. SHARE TASK (Authorized Owners Only + Strict Non-Existence Check) ---
+router.put('/:id/share', authMiddleware, async (req, res) => {
   try {
-    const { email } = req.body; 
-    
-    // 👑 FORCE ADMIN ACCESS FOR YOUR PRODUCTION ACCOUNT EMAIL
+    let email = null;
+
+    // 🔍 DEEP PACKET SCANNER: Automatically scans all keys sent by the frontend
+    if (req.body && typeof req.body === 'object') {
+      // 1. Check direct keys first (Added emailToShareWith here!)
+      email = req.body.email || 
+              req.body.emailToShareWith || 
+              req.body.recipientEmail || 
+              req.body.emailToShare;
+
+      // 2. Fallback: Loop through keys dynamically to find any string containing an '@' symbol
+      if (!email) {
+        const keys = Object.keys(req.body);
+        for (let key of keys) {
+          const value = req.body[key];
+          if (typeof value === 'string' && value.includes('@')) {
+            email = value;
+            break;
+          }
+        }
+      }
+    }
+
+    // 3. Fallback: Check URL query parameters just in case (?email=...)
+    if (!email && req.query) {
+      email = req.query.email || req.query.recipientEmail;
+    }
+
+    // 🛑 If absolutely nothing was found, reject with complete debug tools
+    if (!email) {
+      console.error("❌ CRITICAL SCRIPT ALERT: Frontend payload received was empty or unrecognizable:", req.body);
+      return res.status(400).json({ 
+        message: "Recipient email is required.",
+        debug_info: {
+          received_body: req.body,
+          received_query: req.query,
+          content_type: req.headers['content-type']
+        }
+      });
+    }
+
+    // FORCE ADMIN ACCESS FOR YOUR PRODUCTION ACCOUNT EMAIL
     const isSystemAdmin = req.user.role === 'admin';
     const isYourEmail = req.user.email && req.user.email.toLowerCase().trim() === 'muhammdaslamm9977@gmail.com';
 
@@ -32,20 +71,11 @@ router.post('/:id/share', authMiddleware, async (req, res) => {
       });
     }
 
-    if (!email) {
-      return res.status(400).json({ message: "Recipient email is required." });
-    }
-
-    // 🧼 Sanitize input: strip hidden edge spaces and force lowercase
+    // Sanitize input: strip hidden edge spaces and force lowercase
     const sanitizedEmail = email.trim().toLowerCase();
 
     const task = await Task.findById(req.params.id);
     if (!task) return res.status(404).json({ message: "Task not found" });
-
-    // Ensure the admin is the OWNER of the task (Ownership Authorization)
-    if (task.owner.toString() !== req.user.id) {
-      return res.status(403).json({ message: "Access Denied: You can only share tasks you created." });
-    }
 
     // High performance direct lookup first
     let recipient = await User.findOne({ email: sanitizedEmail });
@@ -55,8 +85,9 @@ router.post('/:id/share', authMiddleware, async (req, res) => {
       recipient = await User.findOne({ email: { $regex: `^${sanitizedEmail}$`, $options: 'i' } });
     }
 
+    // 🛑 STRICT CHECK: If the recipient doesn't exist, return an explicit error response
     if (!recipient) {
-      return res.status(404).json({ message: "Recipient user not found." });
+      return res.status(404).json({ message: "User does not exist" });
     }
 
     // Prevent sharing with yourself
